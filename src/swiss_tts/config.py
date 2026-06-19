@@ -29,14 +29,18 @@ DEFAULT_FALLBACK_TEXTS = {
 
 def _normalize_text_value(value):
     if isinstance(value, list):
-        return " ".join(s.strip() for s in value if s)
+        return " ".join(s.strip() for s in value if s and isinstance(s, str))
     return value
 
 
 def _normalize_texts(raw):
     if not isinstance(raw, dict):
         return None
-    return {k: _normalize_text_value(v) for k, v in raw.items()}
+    result = {}
+    for k, v in raw.items():
+        if isinstance(v, (str, list)):
+            result[k] = _normalize_text_value(v)
+    return result if result else None
 
 
 def _read_json_file(path):
@@ -70,7 +74,7 @@ def _load_texts_from_json():
 
 # Try to load texts from JSON (allows lists of sentences), otherwise keep defaults
 _json_texts = _load_texts_from_json()
-if _json_texts:
+if _json_texts is not None:
     DEFAULT_TEXTS = _json_texts
 else:
     DEFAULT_TEXTS = DEFAULT_FALLBACK_TEXTS

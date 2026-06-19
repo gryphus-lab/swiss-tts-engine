@@ -123,7 +123,7 @@ Specify the license you want to use for this project here.
 
 ## CI and SonarQube
 
-This repository includes a GitHub Actions workflow to run tests and (optionally) perform a SonarQube scan: [.github/workflows/sonar.yml](.github/workflows/sonar.yml).
+This repository includes a GitHub Actions workflow to run tests and (optionally) perform a SonarQube scan: [.github/workflows/ci.yml](.github/workflows/ci.yml).
 
 - The workflow installs `uv`, runs `uv sync` to install project dependencies, and executes the test suite with `uv run pytest -q`.
 - To enable the SonarQube scan, set these repository secrets in GitHub (Settings → Secrets):

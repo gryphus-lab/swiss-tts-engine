@@ -40,16 +40,22 @@ class SwissTTSEngine:
                 self.kwargs["spembs"] = self.model_config["spembs"]
 
     def generate_dialect_speech(
-        self, 
-        text: str, 
-        dialect_name: str, 
+        self,
+        text: str,
+        dialect_name: str,
         silence_duration: float = config.DEFAULT_SILENCE_DURATION,
         output_dir: str = "audio_output"
     ) -> str:
         """
-        Accepts dynamic parameters to split text, run inference, 
+        Accepts dynamic parameters to split text, run inference,
         and write out the voice data into a specific dialect file.
         """
+        # Validate inputs
+        if not text or not text.strip():
+            raise ValueError("text must not be empty or whitespace-only")
+        if silence_duration < 0:
+            raise ValueError("silence_duration must be non-negative")
+
         # Split input parameter text into clean sentence arrays
         sentences = [s.strip() for s in re.split(r'[.!?\n]', text) if s.strip()]
         all_audio_chunks = []
@@ -87,7 +93,7 @@ def run():
     
     # Example 2: Looping through default settings mapped via the updated config layer
     print("\n--- Running Fallback Config Batch Processing ---")
-    for dialect, fallback_text in config.DEFAULT_FALLBACK_TEXTS.items():
+    for dialect, fallback_text in config.DEFAULT_TEXTS.items():
         engine.generate_dialect_speech(text=fallback_text, dialect_name=dialect)
 
 if __name__ == "__main__":

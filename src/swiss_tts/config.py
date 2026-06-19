@@ -28,18 +28,45 @@ DEFAULT_FALLBACK_TEXTS = {
 
 
 def _normalize_text_value(value):
+    """
+    Join list elements into a single string, or return the value unchanged if not a list.
+    
+    Returns:
+    	A space-separated string if the input is a list, otherwise the original value.
+    """
     if isinstance(value, list):
         return " ".join(s.strip() for s in value if s)
     return value
 
 
 def _normalize_texts(raw):
+    """
+    Normalize each value in a dictionary.
+    
+    Returns a new dictionary with each value normalized via _normalize_text_value,
+    or None if the input is not a dictionary.
+    
+    Parameters:
+        raw: The value to normalize.
+    
+    Returns:
+        A normalized dictionary, or None if input is not a dictionary.
+    """
     if not isinstance(raw, dict):
         return None
     return {k: _normalize_text_value(v) for k, v in raw.items()}
 
 
 def _read_json_file(path):
+    """
+    Read and parse a JSON file.
+    
+    Parameters:
+        path: A pathlib.Path object pointing to the JSON file.
+    
+    Returns:
+        The parsed JSON object, or None if the file does not exist or cannot be parsed.
+    """
     if not path.exists():
         return None
     try:
@@ -49,13 +76,12 @@ def _read_json_file(path):
 
 
 def _load_texts_from_json():
-    """Look for a JSON file at the repository root and load dialect texts.
-
-    Supported formats:
-    - {"zurich": ["sentence1", "sentence2"], "bern": [...]}  # lists of sentences
-    - {"zurich": "single long string", ...}  # strings
-
-    If a value is a list it will be joined with a single space.
+    """
+    Load dialect text configuration from an optional JSON file.
+    
+    Returns:
+        dict or None: A mapping of dialect names to text strings, or None if
+            no configuration file is found.
     """
     repo_root = Path(__file__).resolve().parents[2]
     candidates = [repo_root / "texts.json", repo_root / "config" / "texts.json"]

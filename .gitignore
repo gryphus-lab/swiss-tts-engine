@@ -1,0 +1,18 @@
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Environments (uv / local virtualenvs)
+.venv/
+build/
+dist/
+*.egg-info/
+
+# Local tools & IDE configs
+.mise.local.toml
+.vscode/
+
+# Audio outputs (keep the folder structure but ignore generated audio files)
+audio_output/*.wav

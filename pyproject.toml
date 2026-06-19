@@ -3,7 +3,7 @@ name = "swiss-tts-engine"
 version = "0.1.0"
 description = "A multi-dialect Swiss German Text-to-Speech Engine built on ESPnet"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 dependencies = [
     "espnet>=2023.1",
     "espnet-model-zoo>=0.1.6",

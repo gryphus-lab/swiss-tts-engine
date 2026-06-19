@@ -58,6 +58,13 @@ class SwissTTSEngine:
 
         # Split input parameter text into clean sentence arrays
         sentences = [s.strip() for s in re.split(r'[.!?\n]', text) if s.strip()]
+        if not sentences:
+            # Return empty audio if no sentences after splitting
+            os.makedirs(output_dir, exist_ok=True)
+            output_filename = os.path.join(output_dir, f"{dialect_name}_speech.wav")
+            sf.write(output_filename, np.array([]), self.sample_rate)
+            print(f"✓ Saved empty audio output asset to: {output_filename}")
+            return output_filename
         all_audio_chunks = []
         
         print(f"\nProcessing {dialect_name.upper()} text sequence ({len(sentences)} sentences)...")

@@ -34,14 +34,14 @@ This will create a local `.venv` and install the required dependencies.
 Use the provided task or run the module directly:
 
 ```bash
-uv run python -m src.swiss_tts.main
+uv run python -m swiss_tts.main
 ```
 
 or once the environment is active:
 
 ```bash
 source .venv/bin/activate
-python -m src.swiss_tts.main
+python -m swiss_tts.main
 ```
 
 ## Output
@@ -108,9 +108,9 @@ The repository includes useful `uv` tasks in `mise.toml`:
 - `uv run ruff check .` — lint the code
 - `uv run ruff format .` — format the code
 - `uv run pytest` — run tests
-- `uv run check` — run linting and tests
-- `uv run python -m src.swiss_tts.main` — generate speech output
-- `uv run run` — alias for the speech generation task
+- `mise run check` — run linting and tests
+- `uv run python -m swiss_tts.main` — generate speech output
+- `mise run run` — alias for the speech generation task
 
 ## Notes
 

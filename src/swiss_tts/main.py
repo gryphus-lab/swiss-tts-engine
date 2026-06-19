@@ -20,6 +20,14 @@ warnings.filterwarnings("ignore", category=UserWarning)
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 class SwissTTSEngine:
     def __init__(self, model_name: str = config.MODEL_NAME):
+        """
+        Initialize the Swiss TTS engine with the specified model.
+        
+        Downloads the model for speech synthesis and prepares speaker embeddings if required.
+        
+        Parameters:
+            model_name (str): Name of the ESPnet model to download and configure.
+        """
         print(f"Initializing ESPnet Speech Engine using model: {model_name}...")
         self.downloader = ModelDownloader()
         self.model_config = self.downloader.download_and_unpack(model_name)
@@ -87,7 +95,11 @@ class SwissTTSEngine:
         return output_filename
 
 def run():
-    """Example execution flow using both dynamic parameters and config fallbacks."""
+    """
+    Generate speech audio files for Swiss dialects using custom text and configuration fallback texts.
+    
+    Initializes a TTS engine and generates audio outputs for a custom Zurich dialect sample, then batch-processes multiple dialects from the default fallback text configuration.
+    """
     engine = SwissTTSEngine()
     
     # Example 1: Running with dynamic text custom passed via local params

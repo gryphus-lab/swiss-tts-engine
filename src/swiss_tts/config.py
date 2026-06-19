@@ -29,8 +29,9 @@ DEFAULT_FALLBACK_TEXTS = {
 
 def _normalize_text_value(value):
     if isinstance(value, list):
-        return " ".join(s.strip() for s in value if s and isinstance(s, str))
-    return value
+        result = " ".join(s.strip() for s in value if s and isinstance(s, str))
+        return result if result.strip() else None
+    return value if (isinstance(value, str) and value.strip()) else None
 
 
 def _normalize_texts(raw):

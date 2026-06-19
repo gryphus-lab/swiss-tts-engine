@@ -84,7 +84,7 @@ def test_load_texts_from_json_reads_config_texts_json(tmp_path, monkeypatch):
 def test_default_texts_fallback_to_defaults():
     with mock.patch("swiss_tts.config._load_texts_from_json", return_value=None):
         # Force re-evaluation of module-level logic
-        _json_texts = None
+        _json_texts = config._load_texts_from_json()
         if _json_texts is not None:
             DEFAULT_TEXTS = _json_texts
         else:

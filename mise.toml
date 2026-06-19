@@ -49,7 +49,7 @@ run = "uv run ruff check . && uv run pytest"
 
 [tasks.test]
 description = "Run the test suite"
-run = "uv run pytest"
+run = "uv run pytest --cov=src --cov-report=xml:coverage.xml"
 
 # Application tasks
 [tasks.generate]

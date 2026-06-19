@@ -77,10 +77,10 @@ This project uses `mise` for workspace and task management. The `mise.toml` conf
 
 Quick `mise` commands you can run from the repository root:
 
-- `mise tasks` — list available tasks (alias: `uv tasks`)
+- `mise tasks` — list available tasks
 - `mise run <task>` — run a specific task defined in `mise.toml` (examples below)
 - `mise run setup` — create the local venv and install dependencies
-- `mise run generate` or `mise run run` — generate speech audio
+- `mise run generate` (alias: `mise run gen`) — generate speech audio
 - `mise run test` — run the test suite
 - `mise run lint` — run lint checks with Ruff
 - `mise run format` — format the code with Ruff
@@ -108,9 +108,9 @@ The repository includes useful `uv` tasks in `mise.toml`:
 - `uv run ruff check .` — lint the code
 - `uv run ruff format .` — format the code
 - `uv run pytest` — run tests
-- `mise run check` — run linting and tests
+- `mise run lint` — run linting and tests
 - `uv run python -m swiss_tts.main` — generate speech output
-- `mise run run` — alias for the speech generation task
+- `mise run generate` — run the speech generation task
 
 ## Notes
 
@@ -127,9 +127,9 @@ This repository includes a GitHub Actions workflow to run tests and (optionally)
 
 - The workflow installs `uv`, runs `uv sync` to install project dependencies, and executes the test suite with `uv run pytest -q`.
 - To enable the SonarQube scan, set these repository secrets in GitHub (Settings → Secrets):
-	- `SONAR_TOKEN` — SonarQube authentication token.
-	- `SONAR_PROJECT_KEY` — Sonar project key.
-	- Optional: `SONAR_HOST_URL` — SonarQube server URL for self-hosted Sonar (set only if needed).
+  - `SONAR_TOKEN` — SonarQube authentication token.
+  - `SONAR_PROJECT_KEY` — Sonar project key.
+  - Optional: `SONAR_HOST_URL` — SonarQube server URL for self-hosted Sonar (set only if needed).
 
 If the Sonar secrets are not provided the workflow will still run tests and will skip the Sonar scan with a helpful message.
 
@@ -142,4 +142,3 @@ uv run pytest -q
 ```
 
 - Deprecation warnings from third-party packages (e.g. `distutils` and `pkg_resources`) are filtered using `pytest.ini` to keep the test output focused on relevant failures. See `pytest.ini` in the repository root.
-

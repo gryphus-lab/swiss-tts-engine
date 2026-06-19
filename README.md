@@ -120,3 +120,26 @@ The repository includes useful `uv` tasks in `mise.toml`:
 ## License
 
 Specify the license you want to use for this project here.
+
+## CI and SonarQube
+
+This repository includes a GitHub Actions workflow to run tests and (optionally) perform a SonarQube scan: [.github/workflows/sonar.yml](.github/workflows/sonar.yml).
+
+- The workflow installs `uv`, runs `uv sync` to install project dependencies, and executes the test suite with `uv run pytest -q`.
+- To enable the SonarQube scan, set these repository secrets in GitHub (Settings → Secrets):
+	- `SONAR_TOKEN` — SonarQube authentication token.
+	- `SONAR_PROJECT_KEY` — Sonar project key.
+	- Optional: `SONAR_HOST_URL` — SonarQube server URL for self-hosted Sonar (set only if needed).
+
+If the Sonar secrets are not provided the workflow will still run tests and will skip the Sonar scan with a helpful message.
+
+## Testing notes
+
+- Tests use `pytest`. Run them locally via:
+
+```bash
+uv run pytest -q
+```
+
+- Deprecation warnings from third-party packages (e.g. `distutils` and `pkg_resources`) are filtered using `pytest.ini` to keep the test output focused on relevant failures. See `pytest.ini` in the repository root.
+

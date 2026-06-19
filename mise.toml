@@ -9,6 +9,7 @@ PROJECT_NAME = "{{ config_root | basename }}"
 VIRTUAL_ENV = "{{ config_root }}/.venv"
 PATH = "{{ config_root }}/.venv/bin:{{env.PATH}}"
 
+
 [settings]
 activate_aggressive = true
 
@@ -17,33 +18,41 @@ description = "Print project information"
 run = '''
 echo "Project: $PROJECT_NAME"
 echo "Python: $(python --version)"
+echo "Virtual env: $VIRTUAL_ENV"
 '''
 
-# Tasks
+# Dependency management
 [tasks.setup]
-description = "Install dependencies using uv"
+description = "Install dependencies and create the local virtual environment"
 run = "uv sync"
 
 [tasks.add]
-description = "Add a new dependency"
+description = "Add a new dependency to the project"
 run = "uv add {args}"
 
 [tasks.update]
-description = "Update dependencies"
+description = "Update project dependencies"
 run = "uv sync --upgrade"
 
+# Code quality
 [tasks.lint]
-description = "Lint and check formatting with Ruff"
-run = "uv run ruff check . && uv run ruff format --check ."
+description = "Run Ruff linting checks"
+run = "uv run ruff check ."
 
 [tasks.format]
-description = "Format and fix code with Ruff"
-run = "uv run ruff format . && uv run ruff check --fix ."
+description = "Format code with Ruff"
+run = "uv run ruff format ."
+
+[tasks.check]
+description = "Run linting and tests"
+run = "uv run ruff check . && uv run pytest"
 
 [tasks.test]
-description = "Run tests"
-run = "uv run pytest"
+description = "Run the test suite"
+run = "uv run pytest --cov=src --cov-report=xml:coverage.xml"
 
+# Application tasks
 [tasks.generate]
-description = "Run the main application"
+description = "Generate Swiss German speech audio"
 run = "uv run python -m src.swiss_tts.main"
+alias = "gen"

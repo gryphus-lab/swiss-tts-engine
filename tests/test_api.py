@@ -2,7 +2,7 @@ import os
 from types import SimpleNamespace
 
 import pytest
-
+from fastapi import HTTPException
 from fastapi.responses import FileResponse
 
 from swiss_tts import api, config
@@ -18,15 +18,18 @@ def clear_models(monkeypatch):
 
 def test_health_check_loading_when_models_absent():
     api.models.clear()
-    resp = api.health_check()
-    assert resp["status"] == "loading"
+    with pytest.raises(HTTPException) as exc:
+        api.health_check()
+    assert exc.value.status_code == 503
+    assert "Models still loading" in str(exc.value.detail)
 
 
 def test_health_check_error_propagates():
     api.models["error"] = "boom"
-    resp = api.health_check()
-    assert resp["status"] == "error"
-    assert "boom" in resp["message"]
+    with pytest.raises(HTTPException) as exc:
+        api.health_check()
+    assert exc.value.status_code == 503
+    assert exc.value.detail == "boom"
 
 
 def test_synthesize_raises_for_unsupported_dialect():

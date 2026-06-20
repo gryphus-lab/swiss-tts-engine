@@ -56,9 +56,9 @@ class TTSRequest(BaseModel):
 def health_check():
     """Check if API is running and if models are loaded."""
     if "error" in models:
-        return {"status": "error", "message": models["error"]}
+        raise HTTPException(status_code=503, detail=models["error"])
     if "engine" not in models or "translator" not in models:
-        return {"status": "loading", "message": "Models still loading..."}
+        raise HTTPException(status_code=503, detail="Models still loading...")
     return {"status": "ready", "message": "All models loaded and ready."}
 
 
@@ -112,8 +112,17 @@ def synthesize_speech(request: TTSRequest):
 @app.get("/api/v1/audio/{filename}")
 def get_audio_file(filename: str):
     """Endpoint to fetch the generated .wav file."""
-    file_path = os.path.join("audio_output", filename)
-    if not os.path.exists(file_path):
+    # Prevent path traversal by stripping directory components
+    safe_filename = os.path.basename(filename)
+    file_path = os.path.join("audio_output", safe_filename)
+
+    # Verify the resolved path stays within audio_output directory
+    audio_dir = os.path.abspath("audio_output")
+    resolved_path = os.path.abspath(file_path)
+    if not resolved_path.startswith(audio_dir + os.sep):
+        raise HTTPException(status_code=400, detail="Invalid file path.")
+
+    if not os.path.exists(resolved_path):
         raise HTTPException(status_code=404, detail="Audio file not found on server.")
 
-    return FileResponse(file_path, media_type="audio/wav", filename=filename)
+    return FileResponse(resolved_path, media_type="audio/wav", filename=safe_filename)

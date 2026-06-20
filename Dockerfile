@@ -4,8 +4,8 @@ FROM python:3.12-slim
 # Install system dependencies required for audio processing and native builds
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libsndfile1 \
-    build-essential \
-    python3-dev \
+    build-essential=12.9 \
+    python3-dev=3.11.2-1+b1 \
     curl \
     && rm -rf /var/lib/apt/lists/*
 

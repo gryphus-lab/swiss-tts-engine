@@ -103,3 +103,52 @@ def test_translate_to_dialect_rethrows_api_errors(monkeypatch):
     translator_instance = DialectTranslator()
     with pytest.raises(RuntimeError, match="api failure"):
         translator_instance.translate_to_dialect("Guten Tag", "bern")
+
+
+def test_dialect_translator_uses_ollama_url_from_env(monkeypatch):
+    """When OLLAMA_URL is set, DialectTranslator should pass it as the OpenAI base_url."""
+    captured = {}
+
+    def fake_openai(base_url, api_key, timeout):
+        captured["base_url"] = base_url
+        return DummyOpenAI(base_url, api_key, timeout)
+
+    monkeypatch.setenv("OLLAMA_URL", "http://custom-host:12345/v1")
+    monkeypatch.setattr(translator, "OpenAI", fake_openai)
+
+    t = DialectTranslator()
+    assert t.client.base_url == "http://custom-host:12345/v1"
+    assert captured["base_url"] == "http://custom-host:12345/v1"
+
+
+def test_dialect_translator_uses_default_url_when_env_absent(monkeypatch):
+    """When OLLAMA_URL is not set, DialectTranslator falls back to http://localhost:11434/v1."""
+    captured = {}
+
+    def fake_openai(base_url, api_key, timeout):
+        captured["base_url"] = base_url
+        return DummyOpenAI(base_url, api_key, timeout)
+
+    monkeypatch.delenv("OLLAMA_URL", raising=False)
+    monkeypatch.setattr(translator, "OpenAI", fake_openai)
+
+    t = DialectTranslator()
+    assert t.client.base_url == "http://localhost:11434/v1"
+    assert captured["base_url"] == "http://localhost:11434/v1"
+
+
+def test_dialect_translator_ollama_url_propagates_to_translation(monkeypatch):
+    """OLLAMA_URL env var is used for the actual API request (not just stored)."""
+    custom_url = "http://remote-ollama:9999/v1"
+    dummy_client = DummyOpenAI(custom_url, "ollama", 30)
+    monkeypatch.setenv("OLLAMA_URL", custom_url)
+    monkeypatch.setattr(
+        translator, "OpenAI", lambda base_url, api_key, timeout: dummy_client
+    )
+
+    t = DialectTranslator()
+    result = t.translate_to_dialect("Guten Morgen", "zurich")
+
+    assert result == "üsbersetztä Text"
+    assert dummy_client.request is not None
+    assert dummy_client.request["model"] == "gemma4"

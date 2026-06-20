@@ -62,3 +62,46 @@ def test_translate_to_dialect_preserves_target_dialect_in_prompt(monkeypatch):
     prompt = dummy_client.request["messages"][0]["content"]
     assert "'zurich'" in prompt
     assert "Hallo Welt" in prompt
+
+
+def test_translate_to_dialect_raises_on_empty_choices(monkeypatch):
+    dummy_client = DummyOpenAI("http://localhost:11434/v1", "ollama", 30)
+    dummy_client.request = None
+    monkeypatch.setattr(
+        translator,
+        "OpenAI",
+        lambda base_url, api_key, timeout=None: dummy_client,
+    )
+
+    class EmptyChoicesResponse:
+        choices = []
+
+    def create_empty_choices(*args, **kwargs):
+        return EmptyChoicesResponse()
+
+    dummy_client.chat.completions.create = create_empty_choices
+
+    translator_instance = DialectTranslator()
+    with pytest.raises(ValueError, match="API returned empty choices"):
+        translator_instance.translate_to_dialect("Guten Tag", "bern")
+
+
+def test_translate_to_dialect_rethrows_api_errors(monkeypatch):
+    class ErrorOpenAI:
+        def __init__(self, *args, **kwargs):
+            self.chat = SimpleNamespace(
+                completions=SimpleNamespace(create=self.create)
+            )
+
+        def create(self, *args, **kwargs):
+            raise RuntimeError("api failure")
+
+    monkeypatch.setattr(
+        translator,
+        "OpenAI",
+        lambda base_url, api_key, timeout=None: ErrorOpenAI(),
+    )
+
+    translator_instance = DialectTranslator()
+    with pytest.raises(RuntimeError, match="api failure"):
+        translator_instance.translate_to_dialect("Guten Tag", "bern")

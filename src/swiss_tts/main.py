@@ -140,26 +140,6 @@ def run_translation_pipeline(
             continue
 
 
-def run():
-    """
-    Generate speech audio files for Swiss dialects using custom text and configuration fallback texts.
-
-    Initializes a TTS engine and generates audio outputs for a custom Zurich dialect sample, then batch-processes multiple dialects from the default fallback text configuration.
-    """
-    engine = SwissTTSEngine()
-
-    # Example 1: Running with dynamic text custom passed via local params
-    custom_zuri_text = "Sali! Das isch en ganz neue, dynaamische Text im Züri Dialäkt."
-    engine.generate_dialect_speech(
-        text=custom_zuri_text, dialect_name="zurich_custom", silence_duration=0.3
-    )
-
-    # Example 2: Looping through default settings mapped via the updated config layer
-    print("\n--- Running Fallback Config Batch Processing ---")
-    for dialect, fallback_text in config.DEFAULT_TEXTS.items():
-        engine.generate_dialect_speech(text=fallback_text, dialect_name=dialect)
-
-
 if __name__ == "__main__":
     # Example usage: Pass standard High German here!
     test_text = "Guten Tag, mein Name ist Abhay Singh. Ich rufe wegen einer ausstehenden Zahlung von 400 Franken an."

@@ -89,9 +89,7 @@ def test_translate_to_dialect_raises_on_empty_choices(monkeypatch):
 def test_translate_to_dialect_rethrows_api_errors(monkeypatch):
     class ErrorOpenAI:
         def __init__(self, *args, **kwargs):
-            self.chat = SimpleNamespace(
-                completions=SimpleNamespace(create=self.create)
-            )
+            self.chat = SimpleNamespace(completions=SimpleNamespace(create=self.create))
 
         def create(self, *args, **kwargs):
             raise RuntimeError("api failure")

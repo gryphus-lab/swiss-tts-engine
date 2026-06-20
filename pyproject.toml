@@ -13,6 +13,12 @@ dependencies = [
     "torchaudio>=2.11.0",
     "openai>=1.14.0",
     "python-dotenv>=1.0.1",
+    "fastapi>=0.110.0",
+    "uvicorn>=0.29.0",
+]
+
+[project.optional-dependencies]
+dev = [
     "ruff>=0.15.18",
     "pytest>=8.0",
     "pytest-cov>=4.0",

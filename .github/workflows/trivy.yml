@@ -31,12 +31,6 @@ jobs:
         with:
             fetch-depth: 0
 
-      - name: Set up mise
-        uses: jdx/mise-action@v4
-        
-      - name: Install dependencies
-        run: mise run setup
-
       - name: Build docker image
         run: |
           docker build -t gryphus-lab/swiss-tts-engine:${{ github.sha }} .

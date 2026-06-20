@@ -98,7 +98,7 @@ class SwissTTSEngine:
         return output_filename
 
 
-def run_translation_pipeline(hochdeutsch_input: str, target_dialects: list = None):
+def run_translation_pipeline(hochdeutsch_input: str, target_dialects: list[str] | None = None) -> None:
     """
     Takes High German text, translates it to the requested dialects,
     and generates the corresponding audio files.
@@ -106,23 +106,32 @@ def run_translation_pipeline(hochdeutsch_input: str, target_dialects: list = Non
     if target_dialects is None:
         target_dialects = config.SUPPORTED_DIALECTS
 
+    # Validate that all requested dialects are supported
+    invalid_dialects = [d for d in target_dialects if d not in config.SUPPORTED_DIALECTS]
+    if invalid_dialects:
+        raise ValueError(f"Unsupported dialect(s): {invalid_dialects}. Supported dialects: {config.SUPPORTED_DIALECTS}")
+
     engine = SwissTTSEngine()
     translator = DialectTranslator()
 
     print("\n==================================================")
-    print(f"INPUT (Hochdeutsch): {hochdeutsch_input}")
+    print(f"INPUT (Hochdeutsch): [length: {len(hochdeutsch_input)} characters]")
     print("==================================================\n")
 
     for dialect in target_dialects:
-        # 1. Translate the text
-        swiss_text = translator.translate_to_dialect(hochdeutsch_input, dialect)
+        try:
+            # 1. Translate the text
+            swiss_text = translator.translate_to_dialect(hochdeutsch_input, dialect)
 
-        # 2. Generate the audio using the translated text
-        engine.generate_dialect_speech(
-            text=swiss_text,
-            dialect_name=dialect,
-            silence_duration=config.DEFAULT_SILENCE_DURATION,
-        )
+            # 2. Generate the audio using the translated text
+            engine.generate_dialect_speech(
+                text=swiss_text,
+                dialect_name=dialect,
+                silence_duration=config.DEFAULT_SILENCE_DURATION,
+            )
+        except Exception as e:
+            print(f"ERROR: Failed to process dialect '{dialect}': {e}")
+            continue
 
 
 def run():

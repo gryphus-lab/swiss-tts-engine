@@ -11,9 +11,7 @@ class DummyOpenAI:
         self.api_key = api_key
         self.timeout = timeout
         self.request = None
-        self.chat = SimpleNamespace(
-            completions=SimpleNamespace(create=self.create)
-        )
+        self.chat = SimpleNamespace(completions=SimpleNamespace(create=self.create))
 
     def create(self, model, messages, temperature):
         self.request = {
@@ -23,16 +21,16 @@ class DummyOpenAI:
         }
         return SimpleNamespace(
             choices=[
-                SimpleNamespace(
-                    message=SimpleNamespace(content="  üsbersetztä Text  ")
-                )
+                SimpleNamespace(message=SimpleNamespace(content="  üsbersetztä Text  "))
             ]
         )
 
 
 def test_translate_to_dialect_uses_local_ollama_and_strips_response(monkeypatch):
     dummy_client = DummyOpenAI("http://localhost:11434/v1", "ollama", 30)
-    monkeypatch.setattr(translator, "OpenAI", lambda base_url, api_key, timeout: dummy_client)
+    monkeypatch.setattr(
+        translator, "OpenAI", lambda base_url, api_key, timeout: dummy_client
+    )
 
     translator_instance = DialectTranslator()
     translated = translator_instance.translate_to_dialect("Guten Tag", "bern")
@@ -54,7 +52,9 @@ def test_translate_to_dialect_uses_local_ollama_and_strips_response(monkeypatch)
 
 def test_translate_to_dialect_preserves_target_dialect_in_prompt(monkeypatch):
     dummy_client = DummyOpenAI("http://localhost:11434/v1", "ollama", 30)
-    monkeypatch.setattr(translator, "OpenAI", lambda base_url, api_key, timeout: dummy_client)
+    monkeypatch.setattr(
+        translator, "OpenAI", lambda base_url, api_key, timeout: dummy_client
+    )
 
     translator_instance = DialectTranslator()
     translator_instance.translate_to_dialect("Hallo Welt", "zurich")

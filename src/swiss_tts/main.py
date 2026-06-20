@@ -98,7 +98,9 @@ class SwissTTSEngine:
         return output_filename
 
 
-def run_translation_pipeline(hochdeutsch_input: str, target_dialects: list[str] | None = None) -> None:
+def run_translation_pipeline(
+    hochdeutsch_input: str, target_dialects: list[str] | None = None
+) -> None:
     """
     Takes High German text, translates it to the requested dialects,
     and generates the corresponding audio files.
@@ -107,9 +109,13 @@ def run_translation_pipeline(hochdeutsch_input: str, target_dialects: list[str] 
         target_dialects = config.SUPPORTED_DIALECTS
 
     # Validate that all requested dialects are supported
-    invalid_dialects = [d for d in target_dialects if d not in config.SUPPORTED_DIALECTS]
+    invalid_dialects = [
+        d for d in target_dialects if d not in config.SUPPORTED_DIALECTS
+    ]
     if invalid_dialects:
-        raise ValueError(f"Unsupported dialect(s): {invalid_dialects}. Supported dialects: {config.SUPPORTED_DIALECTS}")
+        raise ValueError(
+            f"Unsupported dialect(s): {invalid_dialects}. Supported dialects: {config.SUPPORTED_DIALECTS}"
+        )
 
     engine = SwissTTSEngine()
     translator = DialectTranslator()

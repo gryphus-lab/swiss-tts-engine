@@ -2,20 +2,23 @@
 
 A multi-dialect Swiss German Text-to-Speech engine built on ESPnet.
 
-This repository provides a simple runtime wrapper around the `swordi/SwissDial-TTS` model and generates waveform files for Swiss German dialect samples.
+This repository provides a runtime wrapper around the `swordi/SwissDial-TTS` model, with optional Hochdeutsch translation into Swiss German dialects before generating WAV output.
 
 ## Features
 
 - Uses ESPnet's TTS inference pipeline
-- Supports Swiss German dialect samples for `zurich`, `bern`, and `basel`
-- Produces WAV output files in `audio_output/`
+- Translates standard High German (Hochdeutsch) into phonetic Swiss German dialect text
+- Supports `zurich`, `bern`, and `basel` dialect samples
+- Writes WAV output files to `audio_output/`
+- Loads fallback dialect text from `src/swiss_tts/config.py` or optional `texts.json`
+- Includes pytest coverage for `config`, `main`, and `translator` components
 - Built for Python `3.12`
 
 ## Requirements
 
 - Python 3.12
 - `uv` for the workspace environment
-- `espnet`, `espnet-model-zoo`, `torch`, `torchaudio`, `numpy`, `soundfile`
+- `espnet`, `espnet-model-zoo`, `torch`, `torchaudio`, `numpy`, `soundfile`, `openai`, `python-dotenv`
 
 Dependencies are declared in `pyproject.toml`.
 
@@ -31,17 +34,36 @@ This will create a local `.venv` and install the required dependencies.
 
 ## Run the engine
 
-Use the provided task or run the module directly:
+Use the provided `mise` task or run the module directly:
 
 ```bash
-uv run python -m swiss_tts.main
+mise run generate
 ```
 
-or once the environment is active:
+or:
+
+```bash
+uv run python -m src.swiss_tts.main
+```
+
+If you have activated the virtual environment manually:
 
 ```bash
 source .venv/bin/activate
-python -m swiss_tts.main
+python -m src.swiss_tts.main
+```
+
+## Usage example
+
+To invoke the translation-and-generation pipeline directly from Python:
+
+```python
+from swiss_tts.main import run_translation_pipeline
+
+run_translation_pipeline(
+    hochdeutsch_input="Guten Tag, ich rufe wegen einer ausstehenden Zahlung an.",
+    target_dialects=["zurich", "bern", "basel"],
+)
 ```
 
 ## Output
@@ -52,70 +74,68 @@ Generated audio files are written to:
 - `audio_output/bern_speech.wav`
 - `audio_output/basel_speech.wav`
 
-The engine processes each example sentence from `src/swiss_tts/config.py` and adds a short silence segment between sentences.
+The generator processes each example sentence and inserts a short silence segment between sentences.
 
 ## Configuration
 
 Key settings are defined in `src/swiss_tts/config.py`:
 
-- `MODEL_NAME` – model identifier used by ESPnet ModelDownloader
-- `DEFAULT_TEXTS` – sample dialect text entries
+- `MODEL_NAME` – ESPnet model identifier used by `ModelDownloader`
+- `DEFAULT_TEXTS` – fallback dialect text entries
 - `DEFAULT_SILENCE_DURATION` – silence length inserted between sentences
 
-To change the dialect examples, edit `DEFAULT_TEXTS`.
+Optional JSON override:
+
+- `texts.json` at the repository root, or
+- `config/texts.json`
+
+If present, either file will be loaded and normalized into `DEFAULT_TEXTS`.
+
+## Testing
+
+Run the full test suite with coverage:
+
+```bash
+mise run test
+```
+
+or directly:
+
+```bash
+uv run pytest --cov=src --cov-report=xml:coverage.xml
+```
+
+There are dedicated tests for:
+
+- `tests/test_config.py`
+- `tests/test_main.py`
+- `tests/test_translator.py`
+
+When running tests locally, the translator client is mocked so the suite does not require a live OpenAI or Ollama server.
 
 ## Mise
 
-This project uses `mise` for workspace and task management. The `mise.toml` configuration includes environment setup and useful commands for working with the project.
+This project uses `mise` for workspace and task management.
 
-- Automatic Python virtual environment: `.venv`
-- Local environment path: `.venv/bin`
-- Default Python version: `3.12`
-- Define tasks for setup, dependency management, linting, formatting, testing, and running the app
+Available tasks include:
 
-## Mise Commands
-
-Quick `mise` commands you can run from the repository root:
-
-- `mise tasks` — list available tasks
-- `mise run <task>` — run a specific task defined in `mise.toml` (examples below)
-- `mise run setup` — create the local venv and install dependencies
-- `mise run generate` (alias: `mise run gen`) — generate speech audio
-- `mise run test` — run the test suite
-- `mise run lint` — run lint checks with Ruff
-- `mise run format` — format the code with Ruff
-
-Examples:
-
-```bash
-# list tasks
-mise tasks
-
-# install and sync dependencies
-mise run setup
-
-# generate speech output
-mise run generate
-```
-
-## Tasks
-
-The repository includes useful `uv` tasks in `mise.toml`:
-
-- `uv sync` — install dependencies and create the local virtual environment
-- `uv add <package>` — add a new dependency
-- `uv sync --upgrade` — update dependencies
-- `uv run ruff check .` — lint the code
-- `uv run ruff format .` — format the code
-- `uv run pytest` — run tests
-- `mise run lint` — run linting and tests
-- `uv run python -m swiss_tts.main` — generate speech output
-- `mise run generate` — run the speech generation task
+- `mise run setup` — install dependencies and create the local virtual environment
+- `mise run test` — run the test suite with coverage
+- `mise run lint` — run Ruff linting checks
+- `mise run format` — format code with Ruff
+- `mise run generate` — generate Swiss German speech audio
 
 ## Notes
 
-- The audio generation runs on CPU by default.
-- Warnings from third-party libraries are suppressed in the app.
+- Audio generation runs on CPU by default.
+- Translator integration uses the local OpenAI-compatible client to hit `http://localhost:11434/v1`.
+- Third-party warnings are suppressed in the app for cleaner runtime output.
+
+## Troubleshooting
+
+- If `texts.json` is present, the project loads it from the repository root first.
+- If root-level `texts.json` is missing, it falls back to `config/texts.json`.
+- Invalid JSON in either file is ignored and the app falls back to the default `DEFAULT_TEXTS` values.
 
 ## License
 
@@ -123,22 +143,14 @@ Specify the license you want to use for this project here.
 
 ## CI and SonarQube
 
-This repository includes a GitHub Actions workflow to run tests and (optionally) perform a SonarQube scan: [.github/workflows/ci.yml](.github/workflows/ci.yml).
+This repository includes a GitHub Actions workflow to run tests and optionally perform a SonarQube scan.
 
-- The workflow installs `uv`, runs `uv sync` to install project dependencies, and executes the test suite with `uv run pytest -q`.
-- To enable the SonarQube scan, set these repository secrets in GitHub (Settings → Secrets):
-  - `SONAR_TOKEN` — SonarQube authentication token.
-  - `SONAR_PROJECT_KEY` — Sonar project key.
-  - Optional: `SONAR_HOST_URL` — SonarQube server URL for self-hosted Sonar (set only if needed).
+The CI workflow installs dependencies, runs `uv sync`, and executes the test suite with `uv run pytest -q`.
 
-If the Sonar secrets are not provided the workflow will still run tests and will skip the Sonar scan with a helpful message.
+To enable SonarQube scanning, configure repository secrets:
 
-## Testing notes
+- `SONAR_TOKEN`
+- `SONAR_PROJECT_KEY`
+- Optional: `SONAR_HOST_URL`
 
-- Tests use `pytest`. Run them locally via:
-
-```bash
-uv run pytest -q
-```
-
-- Deprecation warnings from third-party packages (e.g. `distutils` and `pkg_resources`) are filtered using `pytest.ini` to keep the test output focused on relevant failures. See `pytest.ini` in the repository root.
+Without Sonar secrets, CI still runs tests and skips the Sonar scan gracefully.

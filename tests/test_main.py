@@ -198,9 +198,7 @@ def test_generate_dialect_speech_regex_splits_on_exclamation_and_question(
     assert len(tts_call_count) == 4
 
 
-def test_generate_dialect_speech_sample_rate_passed_to_soundfile(
-    monkeypatch, tmp_path
-):
+def test_generate_dialect_speech_sample_rate_passed_to_soundfile(monkeypatch, tmp_path):
     """soundfile.write should receive the engine's sample_rate."""
     calls = []
 
@@ -209,7 +207,9 @@ def test_generate_dialect_speech_sample_rate_passed_to_soundfile(
 
     monkeypatch.setattr(main, "sf", SimpleNamespace(write=fake_write))
     engine = _make_engine(monkeypatch)
-    engine.generate_dialect_speech("Hello world", "testdialect", output_dir=str(tmp_path))
+    engine.generate_dialect_speech(
+        "Hello world", "testdialect", output_dir=str(tmp_path)
+    )
     assert calls[0] == 16000  # DummyText2Speech sets fs=16000
 
 
@@ -275,7 +275,13 @@ def test_run_uses_default_silence_duration_for_batch(monkeypatch):
     silence_durations = []
     real_generate = SwissTTSEngine.generate_dialect_speech
 
-    def recording_generate(self, text, dialect_name, silence_duration=config.DEFAULT_SILENCE_DURATION, output_dir="audio_output"):
+    def recording_generate(
+        self,
+        text,
+        dialect_name,
+        silence_duration=config.DEFAULT_SILENCE_DURATION,
+        output_dir="audio_output",
+    ):
         silence_durations.append(silence_duration)
         # Don't actually write files
         return os.path.join(output_dir, f"{dialect_name}_speech.wav")

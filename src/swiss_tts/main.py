@@ -8,6 +8,7 @@ import torch
 from espnet_model_zoo.downloader import ModelDownloader
 from espnet2.bin.tts_inference import Text2Speech
 from swiss_tts import config
+from swiss_tts.translator import DialectTranslator
 
 # Suppress Python syntax/deprecation warnings from third-party libraries
 warnings.filterwarnings("ignore", category=SyntaxWarning)
@@ -97,6 +98,33 @@ class SwissTTSEngine:
         return output_filename
 
 
+def run_translation_pipeline(hochdeutsch_input: str, target_dialects: list = None):
+    """
+    Takes High German text, translates it to the requested dialects,
+    and generates the corresponding audio files.
+    """
+    if target_dialects is None:
+        target_dialects = config.SUPPORTED_DIALECTS
+
+    engine = SwissTTSEngine()
+    translator = DialectTranslator()
+
+    print("\n==================================================")
+    print(f"INPUT (Hochdeutsch): {hochdeutsch_input}")
+    print("==================================================\n")
+
+    for dialect in target_dialects:
+        # 1. Translate the text
+        swiss_text = translator.translate_to_dialect(hochdeutsch_input, dialect)
+
+        # 2. Generate the audio using the translated text
+        engine.generate_dialect_speech(
+            text=swiss_text,
+            dialect_name=dialect,
+            silence_duration=config.DEFAULT_SILENCE_DURATION,
+        )
+
+
 def run():
     """
     Generate speech audio files for Swiss dialects using custom text and configuration fallback texts.
@@ -118,4 +146,8 @@ def run():
 
 
 if __name__ == "__main__":
-    run()
+    # Example usage: Pass standard High German here!
+    test_text = "Guten Tag, mein Name ist Abhay Singh. Ich rufe wegen einer ausstehenden Zahlung von 400 Franken an."
+
+    # Run the full pipeline
+    run_translation_pipeline(hochdeutsch_input=test_text)

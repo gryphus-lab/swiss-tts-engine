@@ -1,14 +1,16 @@
 # src/swiss_tts/translator.py
 import logging
+import os
+
 from openai import OpenAI
 
 
 class DialectTranslator:
     def __init__(self):
+        ollama_url = os.getenv("OLLAMA_URL", "http://localhost:11434/v1")
+
         # Point the standard OpenAI client to your local Ollama server
-        self.client = OpenAI(
-            base_url="http://localhost:11434/v1", api_key="ollama", timeout=30
-        )
+        self.client = OpenAI(base_url=ollama_url, api_key="ollama", timeout=30)
 
     def translate_to_dialect(self, hochdeutsch_text: str, target_dialect: str) -> str:
         """Translates standard High German into phonetic Swiss German using a local LLM."""

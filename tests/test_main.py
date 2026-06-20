@@ -303,7 +303,9 @@ def test_run_translation_pipeline_continues_after_dialect_error(monkeypatch):
     monkeypatch.setattr(main, "DialectTranslator", PartialFailTranslator)
     monkeypatch.setattr(main, "SwissTTSEngine", DummyEngine)
 
-    main.run_translation_pipeline("Guten Tag", target_dialects=["zurich", "bern", "basel"])
+    main.run_translation_pipeline(
+        "Guten Tag", target_dialects=["zurich", "bern", "basel"]
+    )
 
     assert ("translate", "zurich") in calls
     assert ("translate", "bern") not in []  # translator called, but error handled

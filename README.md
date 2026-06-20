@@ -12,6 +12,8 @@ This repository provides a runtime wrapper around the `swordi/SwissDial-TTS` mod
 - Writes WAV output files to `audio_output/`
 - Loads fallback dialect text from `src/swiss_tts/config.py` or optional `texts.json`
 - Includes pytest coverage for `config`, `main`, and `translator` components
+ - Includes a REST API with FastAPI endpoints for synthesis and audio download
+ - Includes pytest coverage for `config`, `main`, `translator`, and `api` components
 - Built for Python `3.12`
 
 ## Requirements
@@ -51,6 +53,12 @@ If you have activated the virtual environment manually:
 ```bash
 source .venv/bin/activate
 python -m src.swiss_tts.main
+
+Or run the REST API locally with Uvicorn:
+
+```bash
+uv run uvicorn src.swiss_tts.api:app --reload --port 8000
+```
 ```
 
 ## Usage example
@@ -106,10 +114,11 @@ uv run pytest --cov=src --cov-report=xml:coverage.xml
 ```
 
 There are dedicated tests for:
-
-- `tests/test_config.py`
-- `tests/test_main.py`
-- `tests/test_translator.py`
+ - `tests/test_config.py`
+ - `tests/test_main.py`
+ - `tests/test_translator.py`
+ - `tests/test_api.py` (unit tests for `src/swiss_tts/api.py` helpers)
+ - `tests/test_api_client.py` (integration-style tests using FastAPI `TestClient`)
 
 When running tests locally, the translator client is mocked so the suite does not require a live OpenAI or Ollama server.
 

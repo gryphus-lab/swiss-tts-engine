@@ -15,7 +15,7 @@ def _make_dummy_downloader():
             that returns a dict containing "train_config" and "model_file" keys.
     """
     return SimpleNamespace(
-        download_and_unpack=lambda name: {"train_config": "cfg", "model_file": "file"}
+        download_and_unpack=lambda _name: {"train_config": "cfg", "model_file": "file"}
     )
 
 

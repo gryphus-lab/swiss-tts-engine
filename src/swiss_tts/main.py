@@ -19,7 +19,7 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 
 class SwissTTSEngine:
-    def __init__(self, model_name: str = config.MODEL_NAME):
+    def __init__(self, model_name: str = config.MODEL_NAME) -> None:
         """
         Initialize the Swiss TTS engine with the specified model.
 
@@ -78,7 +78,7 @@ class SwissTTSEngine:
         print(
             f"\nProcessing {dialect_name.upper()} text sequence ({len(sentences)} sentences)..."
         )
-        for i, sentence in enumerate(sentences, 1):
+        for _i, sentence in enumerate(sentences, 1):
             with torch.no_grad():
                 outputs = self.text2speech(sentence, **self.kwargs)
                 all_audio_chunks.append(outputs["wav"].numpy())

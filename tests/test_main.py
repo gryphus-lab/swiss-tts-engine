@@ -277,14 +277,15 @@ def test_run_uses_default_silence_duration_for_batch(monkeypatch):
 
     def recording_generate(
         self,
-        _text,
-        _dialect_name,
+        text,
+        dialect_name,
         silence_duration=config.DEFAULT_SILENCE_DURATION,
         output_dir="audio_output",
+        **kwargs,
     ) -> str:
         silence_durations.append(silence_duration)
         # Don't actually write files
-        return os.path.join(output_dir, f"{_dialect_name}_speech.wav")
+        return os.path.join(output_dir, f"{dialect_name}_speech.wav")
 
     monkeypatch.setattr(main, "ModelDownloader", _make_dummy_downloader)
     monkeypatch.setattr(main, "Text2Speech", DummyText2Speech)

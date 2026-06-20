@@ -38,7 +38,8 @@ jobs:
         run: mise run setup
 
       - name: Build docker image
-        run: mise run docker-build
+        run: |
+          docker build -t gryphus-lab/swiss-tts-engine:${{ github.sha }} .
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@v0.36.0

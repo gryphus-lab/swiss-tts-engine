@@ -3,10 +3,10 @@ FROM python:3.12-slim
 
 # Install system dependencies required for audio processing and native builds
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential=12.9 \
+    build-essential \
     curl \
     libsndfile1 \
-    python3-dev=3.11.2-1+b1 \
+    python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Grab the ultra-fast uv executable from Astral's official image
@@ -15,13 +15,12 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 # Set the working directory inside the container
 WORKDIR /app
 
-# Copy dependency definitions and package sources first (to cache the installation layer)
-COPY pyproject.toml README.md ./
+# Copy dependency definitions and lock file FIRST (maximize layer cache)
+COPY pyproject.toml uv.lock README.md ./
 COPY src/ ./src/
 
-# Create a virtual environment and install dependencies via uv
+# Create a virtual environment and install dependencies via uv (frozen lock)
 RUN uv venv && uv sync --frozen
-
 
 # Put the virtual environment on the system PATH
 ENV PATH="/app/.venv/bin:$PATH" \

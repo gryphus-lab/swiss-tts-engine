@@ -35,7 +35,9 @@ def _normalize_text_value(value):
         A space-separated string if the input is a list, otherwise the original value.
     """
     if isinstance(value, list):
-        result = " ".join(s.strip() for s in value if s and isinstance(s, str))
+        result = " ".join(
+            s.strip() for s in value if isinstance(s, str) and s.strip()
+        )
         return result if result.strip() else None
     return value if (isinstance(value, str) and value.strip()) else None
 

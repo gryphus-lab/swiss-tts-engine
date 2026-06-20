@@ -288,6 +288,6 @@ def test_run_uses_default_silence_duration_for_batch(monkeypatch):
 
     # First call is custom zurich with explicit silence_duration=0.3
     assert silence_durations[0] == 0.3
-    # Subsequent calls (batch) pass no silence_duration (None via our wrapper)
+    # Subsequent calls should use the default silence duration.
     for dur in silence_durations[1:]:
-        assert dur is None
+        assert dur == config.DEFAULT_SILENCE_DURATION

@@ -275,7 +275,7 @@ def test_run_uses_default_silence_duration_for_batch(monkeypatch):
     silence_durations = []
     real_generate = SwissTTSEngine.generate_dialect_speech
 
-    def recording_generate(self, text, dialect_name, silence_duration=None, output_dir="audio_output"):
+    def recording_generate(self, text, dialect_name, silence_duration=config.DEFAULT_SILENCE_DURATION, output_dir="audio_output"):
         silence_durations.append(silence_duration)
         # Don't actually write files
         return os.path.join(output_dir, f"{dialect_name}_speech.wav")

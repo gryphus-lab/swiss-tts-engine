@@ -6,9 +6,10 @@ from swiss_tts.translator import DialectTranslator
 
 
 class DummyOpenAI:
-    def __init__(self, base_url, api_key):
+    def __init__(self, base_url, api_key, timeout):
         self.base_url = base_url
         self.api_key = api_key
+        self.timeout = timeout
         self.request = None
         self.chat = SimpleNamespace(
             completions=SimpleNamespace(create=self.create)
@@ -30,8 +31,8 @@ class DummyOpenAI:
 
 
 def test_translate_to_dialect_uses_local_ollama_and_strips_response(monkeypatch):
-    dummy_client = DummyOpenAI("http://localhost:11434/v1", "ollama")
-    monkeypatch.setattr(translator, "OpenAI", lambda base_url, api_key: dummy_client)
+    dummy_client = DummyOpenAI("http://localhost:11434/v1", "ollama", 30)
+    monkeypatch.setattr(translator, "OpenAI", lambda base_url, api_key, timeout: dummy_client)
 
     translator_instance = DialectTranslator()
     translated = translator_instance.translate_to_dialect("Guten Tag", "bern")
@@ -52,8 +53,8 @@ def test_translate_to_dialect_uses_local_ollama_and_strips_response(monkeypatch)
 
 
 def test_translate_to_dialect_preserves_target_dialect_in_prompt(monkeypatch):
-    dummy_client = DummyOpenAI("http://localhost:11434/v1", "ollama")
-    monkeypatch.setattr(translator, "OpenAI", lambda base_url, api_key: dummy_client)
+    dummy_client = DummyOpenAI("http://localhost:11434/v1", "ollama", 30)
+    monkeypatch.setattr(translator, "OpenAI", lambda base_url, api_key, timeout: dummy_client)
 
     translator_instance = DialectTranslator()
     translator_instance.translate_to_dialect("Hallo Welt", "zurich")

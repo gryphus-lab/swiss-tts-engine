@@ -56,7 +56,9 @@ def test_synthesize_translates_and_calls_engine(monkeypatch, tmp_path):
             calls.append(("generate", text, dialect_name))
             return str(tmp_path / f"{dialect_name}_speech.wav")
 
-    monkeypatch.setattr(api, "models", {"engine": DummyEngine(), "translator": DummyTranslator()})
+    monkeypatch.setattr(
+        api, "models", {"engine": DummyEngine(), "translator": DummyTranslator()}
+    )
 
     req = api.TTSRequest(text="Guten Tag", dialect="zurich", translate=True)
     resp = api.synthesize_speech(req)

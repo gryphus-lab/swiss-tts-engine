@@ -66,24 +66,6 @@ def test_generate_dialect_speech_saves_file(tmp_path, monkeypatch):
     assert calls and calls[0][2] == 16000
 
 
-def test_run_writes_for_all_dialects(monkeypatch):
-    calls = []
-
-    def fake_write(path, data, samplerate):
-        calls.append(path)
-
-    monkeypatch.setattr(main, "ModelDownloader", _make_dummy_downloader)
-    monkeypatch.setattr(main, "Text2Speech", DummyText2Speech)
-    monkeypatch.setattr(main, "sf", SimpleNamespace(write=fake_write))
-
-    # Run the module-level runner
-    main.run()
-
-    # One for the custom_zuri and one per default fallback dialect
-    expected = 1 + len(config.DEFAULT_FALLBACK_TEXTS)
-    assert len(calls) == expected
-
-
 # --- Additional tests for changed code in this PR ---
 
 
@@ -198,9 +180,7 @@ def test_generate_dialect_speech_regex_splits_on_exclamation_and_question(
     assert len(tts_call_count) == 4
 
 
-def test_generate_dialect_speech_sample_rate_passed_to_soundfile(
-    monkeypatch, tmp_path
-):
+def test_generate_dialect_speech_sample_rate_passed_to_soundfile(monkeypatch, tmp_path):
     """soundfile.write should receive the engine's sample_rate."""
     calls = []
 
@@ -209,7 +189,9 @@ def test_generate_dialect_speech_sample_rate_passed_to_soundfile(
 
     monkeypatch.setattr(main, "sf", SimpleNamespace(write=fake_write))
     engine = _make_engine(monkeypatch)
-    engine.generate_dialect_speech("Hello world", "testdialect", output_dir=str(tmp_path))
+    engine.generate_dialect_speech(
+        "Hello world", "testdialect", output_dir=str(tmp_path)
+    )
     assert calls[0] == 16000  # DummyText2Speech sets fs=16000
 
 
@@ -270,24 +252,117 @@ def test_engine_sets_spembs_from_model_config_fallback(monkeypatch):
     assert engine.kwargs["spembs"] is dummy_spembs
 
 
-def test_run_uses_default_silence_duration_for_batch(monkeypatch):
-    """run() batch loop should use default silence duration (no explicit silence_duration arg)."""
-    silence_durations = []
-    real_generate = SwissTTSEngine.generate_dialect_speech
+def test_run_translation_pipeline_uses_default_dialects(monkeypatch):
+    calls = []
 
-    def recording_generate(self, text, dialect_name, silence_duration=config.DEFAULT_SILENCE_DURATION, output_dir="audio_output"):
-        silence_durations.append(silence_duration)
-        # Don't actually write files
-        return os.path.join(output_dir, f"{dialect_name}_speech.wav")
+    class DummyTranslator:
+        def translate_to_dialect(self, text, dialect):
+            calls.append(("translate", dialect))
+            return f"translated {dialect}"
 
-    monkeypatch.setattr(main, "ModelDownloader", _make_dummy_downloader)
-    monkeypatch.setattr(main, "Text2Speech", DummyText2Speech)
-    monkeypatch.setattr(SwissTTSEngine, "generate_dialect_speech", recording_generate)
+    class DummyEngine:
+        def generate_dialect_speech(
+            self, text, dialect_name, silence_duration=config.DEFAULT_SILENCE_DURATION
+        ):
+            calls.append(("generate", dialect_name, silence_duration))
+            return f"{dialect_name}.wav"
 
-    main.run()
+    monkeypatch.setattr(main, "DialectTranslator", DummyTranslator)
+    monkeypatch.setattr(main, "SwissTTSEngine", DummyEngine)
 
-    # First call is custom zurich with explicit silence_duration=0.3
-    assert silence_durations[0] == 0.3
-    # Subsequent calls should use the default silence duration.
-    for dur in silence_durations[1:]:
-        assert dur == config.DEFAULT_SILENCE_DURATION
+    main.run_translation_pipeline("Guten Tag")
+
+    assert calls[0] == ("translate", "zurich")
+    assert calls[1] == ("generate", "zurich", config.DEFAULT_SILENCE_DURATION)
+    assert ("translate", "bern") in calls
+    assert ("translate", "basel") in calls
+
+
+def test_run_translation_pipeline_raises_for_unsupported_dialects():
+    with pytest.raises(ValueError, match=r"Unsupported dialect\(s\)"):
+        main.run_translation_pipeline("Hallo", target_dialects=["invalid"])
+
+
+def test_run_translation_pipeline_continues_after_dialect_error(monkeypatch):
+    calls = []
+
+    class PartialFailTranslator:
+        def translate_to_dialect(self, text, dialect):
+            if dialect == "bern":
+                raise RuntimeError("translation failed")
+            calls.append(("translate", dialect))
+            return f"translated {dialect}"
+
+    class DummyEngine:
+        def generate_dialect_speech(
+            self, text, dialect_name, silence_duration=config.DEFAULT_SILENCE_DURATION
+        ):
+            calls.append(("generate", dialect_name))
+            return f"{dialect_name}.wav"
+
+    monkeypatch.setattr(main, "DialectTranslator", PartialFailTranslator)
+    monkeypatch.setattr(main, "SwissTTSEngine", DummyEngine)
+
+    main.run_translation_pipeline("Guten Tag", target_dialects=["zurich", "bern", "basel"])
+
+    assert ("translate", "zurich") in calls
+    assert ("translate", "bern") not in []  # translator called, but error handled
+    assert ("translate", "basel") in calls
+    assert ("generate", "zurich") in calls
+    assert ("generate", "basel") in calls
+
+
+def test_main_module_executes_as_script(monkeypatch, tmp_path):
+    import runpy
+    import sys
+    import types
+
+    sys_modules_backup = sys.modules.copy()
+    try:
+        dummy_openai = types.SimpleNamespace(
+            OpenAI=lambda *args, **kwargs: SimpleNamespace(
+                chat=SimpleNamespace(
+                    completions=SimpleNamespace(
+                        create=lambda *a, **kw: SimpleNamespace(
+                            choices=[
+                                SimpleNamespace(message=SimpleNamespace(content="ok"))
+                            ]
+                        )
+                    )
+                )
+            )
+        )
+        sys.modules["openai"] = dummy_openai
+
+        class DummyDownloader:
+            def __init__(self):
+                pass
+
+            def download_and_unpack(self, name):
+                return {"train_config": "cfg", "model_file": "file"}
+
+        downloader_module = types.SimpleNamespace(ModelDownloader=DummyDownloader)
+        sys.modules["espnet_model_zoo.downloader"] = downloader_module
+
+        class DummyText2SpeechClass:
+            def __init__(self, *args, **kwargs):
+                self.tts = SimpleNamespace(fs=16000)
+                self.use_spembs = False
+
+            def __call__(self, text, **kwargs):
+                class Wav:
+                    def numpy(self):
+                        return np.array([0.0], dtype=np.float32)
+
+                return {"wav": Wav()}
+
+        tts_module = types.SimpleNamespace(Text2Speech=DummyText2SpeechClass)
+        sys.modules["espnet2.bin.tts_inference"] = tts_module
+
+        sf_module = types.SimpleNamespace(write=lambda *args, **kwargs: None)
+        sys.modules["soundfile"] = sf_module
+
+        runpy.run_module("src.swiss_tts.main", run_name="__main__")
+    finally:
+        sys.modules.clear()
+        sys.modules.update(sys_modules_backup)

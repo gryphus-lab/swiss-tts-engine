@@ -1,9 +1,10 @@
+# src/swiss_tts/config.py
 from pathlib import Path
 import json
 
-# Fallback/default texts (kept for backwards compatibility)
 
-# src/swiss_tts/config.py
+# The default dialects our engine supports and wants to generate
+SUPPORTED_DIALECTS = ["zurich", "bern", "basel"]
 
 MODEL_NAME = "swordi/SwissDial-TTS"
 DEFAULT_SILENCE_DURATION = 0.2  # Seconds
@@ -12,9 +13,7 @@ DEFAULT_SILENCE_DURATION = 0.2  # Seconds
 DEFAULT_FALLBACK_TEXTS = {
     "zurich": (
         "Grüezi, min Name isch Abhay Singh. Ich lüüte aa wägenere uusstehende "
-        "Genuugtuigszahlig vo CHF 400.00, wo mir im Juni 2024 zuegsproche worde isch. "
-        "D Gschäftsnummere isch D-9/2023/10047859. Ich han die Zahlig bis jetzt noned "
-        "überchoo und han mi welle nach em Status erkundige."
+        "Genuugtuigszahlig vo vierhundert Franke."
     ),
     "bern": (
         "Grüessech, oise Name isch Abhay Singh. I lüte a wägenere uusstehende "
@@ -35,9 +34,7 @@ def _normalize_text_value(value):
         A space-separated string if the input is a list, otherwise the original value.
     """
     if isinstance(value, list):
-        result = " ".join(
-            s.strip() for s in value if isinstance(s, str) and s.strip()
-        )
+        result = " ".join(s.strip() for s in value if isinstance(s, str) and s.strip())
         return result if result.strip() else None
     return value if (isinstance(value, str) and value.strip()) else None
 

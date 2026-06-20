@@ -11,6 +11,7 @@ coverage.xml
 build/
 dist/
 *.egg-info/
+.env
 
 # Local tools & IDE configs
 .mise.local.toml

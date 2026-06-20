@@ -8,6 +8,7 @@ import torch
 from espnet_model_zoo.downloader import ModelDownloader
 from espnet2.bin.tts_inference import Text2Speech
 from swiss_tts import config
+from swiss_tts.translator import DialectTranslator
 
 # Suppress Python syntax/deprecation warnings from third-party libraries
 warnings.filterwarnings("ignore", category=SyntaxWarning)
@@ -97,25 +98,51 @@ class SwissTTSEngine:
         return output_filename
 
 
-def run():
+def run_translation_pipeline(
+    hochdeutsch_input: str, target_dialects: list[str] | None = None
+) -> None:
     """
-    Generate speech audio files for Swiss dialects using custom text and configuration fallback texts.
+    Takes High German text, translates it to the requested dialects,
+    and generates the corresponding audio files.
+    """
+    if target_dialects is None:
+        target_dialects = config.SUPPORTED_DIALECTS
 
-    Initializes a TTS engine and generates audio outputs for a custom Zurich dialect sample, then batch-processes multiple dialects from the default fallback text configuration.
-    """
+    # Validate that all requested dialects are supported
+    invalid_dialects = [
+        d for d in target_dialects if d not in config.SUPPORTED_DIALECTS
+    ]
+    if invalid_dialects:
+        raise ValueError(
+            f"Unsupported dialect(s): {invalid_dialects}. Supported dialects: {config.SUPPORTED_DIALECTS}"
+        )
+
     engine = SwissTTSEngine()
+    translator = DialectTranslator()
 
-    # Example 1: Running with dynamic text custom passed via local params
-    custom_zuri_text = "Sali! Das isch en ganz neue, dynaamische Text im Züri Dialäkt."
-    engine.generate_dialect_speech(
-        text=custom_zuri_text, dialect_name="zurich_custom", silence_duration=0.3
-    )
+    print("\n==================================================")
+    print(f"INPUT (Hochdeutsch): [length: {len(hochdeutsch_input)} characters]")
+    print("==================================================\n")
 
-    # Example 2: Looping through default settings mapped via the updated config layer
-    print("\n--- Running Fallback Config Batch Processing ---")
-    for dialect, fallback_text in config.DEFAULT_TEXTS.items():
-        engine.generate_dialect_speech(text=fallback_text, dialect_name=dialect)
+    for dialect in target_dialects:
+        try:
+            # 1. Translate the text
+            swiss_text = translator.translate_to_dialect(hochdeutsch_input, dialect)
+
+            # 2. Generate the audio using the translated text
+            engine.generate_dialect_speech(
+                text=swiss_text,
+                dialect_name=dialect,
+                silence_duration=config.DEFAULT_SILENCE_DURATION,
+            )
+        except Exception as e:
+            print(f"ERROR: Failed to process dialect '{dialect}': {e}")
+            continue
 
 
 if __name__ == "__main__":
-    run()
+    # Example usage: Pass standard High German here!
+    test_text = "Guten Tag, mein Name ist Abhay Singh. Ich rufe wegen einer ausstehenden Zahlung von 400 Franken an."
+
+    # Run the full pipeline
+    run_translation_pipeline(hochdeutsch_input=test_text)

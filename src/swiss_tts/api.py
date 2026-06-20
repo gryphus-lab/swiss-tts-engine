@@ -126,3 +126,8 @@ def get_audio_file(filename: str):
         raise HTTPException(status_code=404, detail="Audio file not found on server.")
 
     return FileResponse(resolved_path, media_type="audio/wav", filename=safe_filename)
+
+@app.get("/")
+def serve_frontend():
+    """Serves the simple HTML frontend."""
+    return FileResponse("public/index.html")

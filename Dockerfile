@@ -18,6 +18,7 @@ WORKDIR /app
 # Copy dependency definitions and lock file FIRST (maximize layer cache)
 COPY pyproject.toml uv.lock README.md ./
 COPY src/ ./src/
+COPY public/ ./public/
 
 # Create a virtual environment and install dependencies via uv (frozen lock)
 RUN uv venv && uv sync --frozen

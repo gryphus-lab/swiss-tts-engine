@@ -9,12 +9,14 @@ from swiss_tts.main import SwissTTSEngine
 def _make_dummy_downloader():
     """
     Create a mock downloader that always returns fixed model configuration.
-    
+
     Returns:
         SimpleNamespace: A downloader-like object with a download_and_unpack method
             that returns a dict containing "train_config" and "model_file" keys.
     """
-    return SimpleNamespace(download_and_unpack=lambda name: {"train_config": "cfg", "model_file": "file"})
+    return SimpleNamespace(
+        download_and_unpack=lambda name: {"train_config": "cfg", "model_file": "file"}
+    )
 
 
 class DummyText2Speech:
@@ -25,10 +27,11 @@ class DummyText2Speech:
     def __call__(self, text, **kwargs):
         """
         Return a fixed dictionary with a dummy audio object.
-        
+
         Returns:
             A dictionary with key 'wav' containing an object whose numpy() method returns [0.1, -0.1].
         """
+
         class Wav:
             def __init__(self):
                 self._arr = np.array([0.1, -0.1], dtype=np.float32)
@@ -51,7 +54,9 @@ def test_generate_dialect_speech_saves_file(tmp_path, monkeypatch):
     monkeypatch.setattr(main, "sf", SimpleNamespace(write=fake_write))
 
     engine = SwissTTSEngine()
-    out = engine.generate_dialect_speech("Hello. World", "testdialect", output_dir=str(tmp_path))
+    out = engine.generate_dialect_speech(
+        "Hello. World", "testdialect", output_dir=str(tmp_path)
+    )
 
     assert os.path.exists(str(tmp_path))
     assert out.endswith("testdialect_speech.wav")

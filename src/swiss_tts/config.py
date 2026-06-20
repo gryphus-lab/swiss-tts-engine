@@ -23,16 +23,16 @@ DEFAULT_FALLBACK_TEXTS = {
     "basel": (
         "Griezi, mi Name isch Abhay Singh. Ich lüte aa wägenere uusstehende "
         "Genuugtuigszaahlig vo vierhundert Franke."
-    )
+    ),
 }
 
 
 def _normalize_text_value(value):
     """
     Join list elements into a single string, or return the value unchanged if not a list.
-    
+
     Returns:
-    	A space-separated string if the input is a list, otherwise the original value.
+        A space-separated string if the input is a list, otherwise the original value.
     """
     if isinstance(value, list):
         result = " ".join(s.strip() for s in value if s and isinstance(s, str))
@@ -43,13 +43,13 @@ def _normalize_text_value(value):
 def _normalize_texts(raw):
     """
     Normalize each value in a dictionary.
-    
+
     Returns a new dictionary with each value normalized via _normalize_text_value,
     or None if the input is not a dictionary.
-    
+
     Parameters:
         raw: The value to normalize.
-    
+
     Returns:
         A normalized dictionary, or None if input is not a dictionary.
     """
@@ -65,10 +65,10 @@ def _normalize_texts(raw):
 def _read_json_file(path):
     """
     Read and parse a JSON file.
-    
+
     Parameters:
         path: A pathlib.Path object pointing to the JSON file.
-    
+
     Returns:
         The parsed JSON object, or None if the file does not exist or cannot be parsed.
     """
@@ -83,7 +83,7 @@ def _read_json_file(path):
 def _load_texts_from_json():
     """
     Load dialect text configuration from an optional JSON file.
-    
+
     Returns:
         dict or None: A mapping of dialect names to text strings, or None if
             no configuration file is found.

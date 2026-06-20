@@ -44,7 +44,9 @@ def test_read_json_file_returns_none_for_invalid_json(tmp_path):
 def test_load_texts_from_json_prefers_root_texts_json(tmp_path, monkeypatch):
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
-    (repo_root / "texts.json").write_text(json.dumps({"basel": "Sali"}), encoding="utf8")
+    (repo_root / "texts.json").write_text(
+        json.dumps({"basel": "Sali"}), encoding="utf8"
+    )
 
     class DummyPath:
         def __init__(self, *args):

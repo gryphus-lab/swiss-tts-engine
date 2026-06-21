@@ -64,7 +64,12 @@ def health_check():
 
 @app.post("/api/v1/synthesize")
 def synthesize_speech(request: TTSRequest):
-    """Generates audio from text and returns a URL to download the file."""
+    """
+    Generate synthesized speech audio from the provided text in the specified dialect.
+    
+    Returns:
+        dict: Response dictionary with keys "status", "dialect", "translated_text", and "audio_url".
+    """
     if request.dialect not in config.SUPPORTED_DIALECTS:
         raise HTTPException(
             status_code=400, 

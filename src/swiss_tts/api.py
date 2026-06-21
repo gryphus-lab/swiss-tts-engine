@@ -58,16 +58,16 @@ class TTSRequest(BaseModel):
 def health_check():
     """
     Check if the service is ready and all models are loaded.
-    
+
     Returns:
         dict: A status object containing "status" and "message" fields.
-    
+
     Raises:
         HTTPException: With status code 503 if models failed to load or are still loading.
     """
     if "error" in models:
         logger.error(f"Model loading error: {models['error']}")
-        raise HTTPException(status_code=503, detail="Service unavailable due to model loading error")
+        raise HTTPException(status_code=503, detail=models["error"])
     if "engine" not in models or "translator" not in models:
         raise HTTPException(status_code=503, detail="Models still loading...")
     return {"status": "ready", "message": "All models loaded and ready."}
@@ -77,42 +77,48 @@ def health_check():
 def synthesize_speech(request: TTSRequest):
     """
     Generate synthesized speech audio from text in the specified dialect.
-    
+
     Returns:
         dict: Response containing the status, requested dialect, translated text, and audio file URL.
     """
     if request.dialect not in config.SUPPORTED_DIALECTS:
         raise HTTPException(
             status_code=400,
-            detail=f"Unsupported dialect. Choose from {config.SUPPORTED_DIALECTS}"
+            detail=f"Unsupported dialect. Choose from {config.SUPPORTED_DIALECTS}",
         )
 
     if "error" in models:
         logger.error(f"Model loading error: {models['error']}")
-        raise HTTPException(status_code=503, detail="Service unavailable due to model loading error")
+        raise HTTPException(
+            status_code=503,
+            detail=f"Model loading error: {models['error']}",
+        )
 
     if "engine" not in models or "translator" not in models:
         raise HTTPException(status_code=503, detail="Models still loading...")
 
     # 1. ALWAYS format the text phonetically via the LLM
-    final_text = models["translator"].translate_to_dialect(request.text, request.dialect)
+    final_text = models["translator"].translate_to_dialect(
+        request.text, request.dialect
+    )
 
     # 2. Synthesize audio
     try:
         output_path = models["engine"].generate_dialect_speech(
-            text=final_text,
-            dialect_name=request.dialect
+            text=final_text, dialect_name=request.dialect
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Audio generation failed: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Audio generation failed: {str(e)}"
+        )
 
     filename = os.path.basename(output_path)
-    
+
     return {
         "status": "success",
         "dialect": request.dialect,
         "translated_text": final_text,
-        "audio_url": f"/api/v1/audio/{filename}"
+        "audio_url": f"/api/v1/audio/{filename}",
     }
 
 

@@ -9,7 +9,7 @@ class DialectTranslator:
     def __init__(self):
         """
         Initialize the translator with a connection to a local Ollama server.
-        
+
         The Ollama server URL can be configured via the OLLAMA_URL environment variable,
         defaulting to http://localhost:11434/v1 if not set.
         """
@@ -21,13 +21,13 @@ class DialectTranslator:
     def translate_to_dialect(self, input_text: str, target_dialect: str) -> str:
         """
         Translate text to a specified Swiss German dialect in phonetic form suitable for text-to-speech synthesis.
-        
+
         Parameters:
             target_dialect (str): The target Swiss German dialect name.
-        
+
         Returns:
             str: The translated text with numbers spelled out as words.
-        
+
         Raises:
             ValueError: If the API response contains no valid choices.
         """
@@ -35,7 +35,7 @@ class DialectTranslator:
 
         prompt = f"""
         You are an expert in Swiss German dialects.
-        Translate the following text into the '{target_dialect}' Swiss German dialect.
+        Translate the following standard High German text into the '{target_dialect}' Swiss German dialect.
         The input text may be in English, High German, or any other language.
 
         CRITICAL RULES:

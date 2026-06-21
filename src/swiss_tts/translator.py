@@ -20,14 +20,16 @@ class DialectTranslator:
 
     def translate_to_dialect(self, input_text: str, target_dialect: str) -> str:
         """
-        Translate text to a specified Swiss German dialect in phonetic form suitable for text-to-speech synthesis.
-
+        Translate text to a specified Swiss German dialect in phonetic form.
+        
+        The function accepts input text in any language and produces output with numbers spelled out as words.
+        
         Parameters:
             target_dialect (str): The target Swiss German dialect name.
-
+        
         Returns:
-            str: The translated text with numbers spelled out as words.
-
+            str: The translated text in phonetic form with numbers spelled out as words.
+        
         Raises:
             ValueError: If the API response contains no valid choices.
         """

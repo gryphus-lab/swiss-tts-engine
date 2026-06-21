@@ -79,7 +79,7 @@
                 attempts++;
                 try {
                     const response = await fetch('/health', {
-                        signal: AbortSignal.timeout(400)
+                        signal: AbortSignal.timeout(800)
                     });
                     if (response.ok) {
                         const data = await response.json();

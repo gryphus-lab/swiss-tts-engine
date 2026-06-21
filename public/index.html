@@ -44,7 +44,7 @@
         <h1>🇨🇭 Swiss TTS Engine</h1>
         
         <label for="textInput">Text Input</label>
-        <textarea id="textInput" placeholder="Enter text in any language (English, German, French, etc.)...">Hello, my name is Abhay. I am calling about a payment.</textarea>
+        <textarea id="textInput" placeholder="Enter text in any language (English, German, French, etc.)...">Hello, how are you today?</textarea>
               
         <label for="dialectSelect">Target Dialect</label>
         <select id="dialectSelect">
@@ -85,7 +85,7 @@
                         }
                     }
                 } catch (err) {
-                    console.log(`Exception while polling API endpoint: ${err} . Continue loading....`);
+                    console.log(`Exception while polling API endpoint: ${err}. Continue loading....`);
                 }
 
                 if (attempts >= maxAttempts) {
@@ -120,8 +120,7 @@
 
             const payload = {
                 text: document.getElementById('textInput').value,
-                dialect: document.getElementById('dialectSelect').value,
-                translate: document.getElementById('translateCheck').checked
+                dialect: document.getElementById('dialectSelect').value
             };
 
             try {

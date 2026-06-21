@@ -1,4 +1,5 @@
 # src/swiss_tts/api.py
+import logging
 import os
 import threading
 from contextlib import asynccontextmanager
@@ -9,6 +10,8 @@ from pydantic import BaseModel
 from swiss_tts.main import SwissTTSEngine
 from swiss_tts.translator import DialectTranslator
 from swiss_tts import config
+
+logger = logging.getLogger(__name__)
 
 # Global state for our models so they persist across requests
 models = {}
@@ -49,14 +52,14 @@ app = FastAPI(
 class TTSRequest(BaseModel):
     text: str
     dialect: str = "zurich"
-    translate: bool = True  # Set to True if input is Hochdeutsch
 
 
 @app.get("/health")
 def health_check():
     """Check if API is running and if models are loaded."""
     if "error" in models:
-        raise HTTPException(status_code=503, detail=models["error"])
+        logger.error(f"Model loading error: {models['error']}")
+        raise HTTPException(status_code=503, detail="Service unavailable due to model loading error")
     if "engine" not in models or "translator" not in models:
         raise HTTPException(status_code=503, detail="Models still loading...")
     return {"status": "ready", "message": "All models loaded and ready."}
@@ -72,12 +75,13 @@ def synthesize_speech(request: TTSRequest):
     """
     if request.dialect not in config.SUPPORTED_DIALECTS:
         raise HTTPException(
-            status_code=400, 
+            status_code=400,
             detail=f"Unsupported dialect. Choose from {config.SUPPORTED_DIALECTS}"
         )
 
     if "error" in models:
-        raise HTTPException(status_code=503, detail=f"Model loading error: {models['error']}")
+        logger.error(f"Model loading error: {models['error']}")
+        raise HTTPException(status_code=503, detail="Service unavailable due to model loading error")
 
     if "engine" not in models or "translator" not in models:
         raise HTTPException(status_code=503, detail="Models still loading...")

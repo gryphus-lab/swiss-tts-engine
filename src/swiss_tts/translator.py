@@ -28,15 +28,15 @@ class DialectTranslator:
         print(f"🌍 Translating to {target_dialect.upper()} via Local AI...")
 
         prompt = f"""
-        You are an expert in Swiss German dialects. 
-        Translate the following standard High German text into the '{target_dialect}' Swiss German dialect. 
+        You are an expert in Swiss German dialects.
+        Translate the following text into the '{target_dialect}' Swiss German dialect.
         The input text may be in English, High German, or any other language.
-        
+
         CRITICAL RULES:
         1. Write the dialect PHONETICALLY so a text-to-speech engine can read it accurately.
         2. Spell out numbers entirely as words (e.g., 'vierhundert' instead of '400').
         3. Output ONLY the translated text. No explanations, no markdown, no quotes.
-        
+
         Text to translate:
         {input_text}
         """

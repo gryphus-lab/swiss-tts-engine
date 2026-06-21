@@ -58,15 +58,15 @@ class TTSRequest(BaseModel):
 def health_check():
     """
     Indicate whether the service is ready to handle requests.
-    
+
     Returns:
         dict: A dictionary with "status" and "message" fields indicating successful model loading.
-    
+
     Raises:
         HTTPException: With status code 503 if model loading has failed or models are still loading.
     """
     if "error" in models:
-        logger.error(f"Model loading error: {models['error']}")
+        logger.error("Model loading error: %s", models["error"])
         raise HTTPException(status_code=503, detail=models["error"])
     if "engine" not in models or "translator" not in models:
         raise HTTPException(status_code=503, detail="Models still loading...")
@@ -77,7 +77,7 @@ def health_check():
 def synthesize_speech(request: TTSRequest):
     """
     Translate text to the specified dialect and generate synthesized speech audio.
-    
+
     Returns:
         dict: Contains the synthesis status, requested dialect, translated text, and audio file URL.
     """
@@ -88,7 +88,7 @@ def synthesize_speech(request: TTSRequest):
         )
 
     if "error" in models:
-        logger.error(f"Model loading error: {models['error']}")
+        logger.error("Model loading error: %s", models["error"])
         raise HTTPException(
             status_code=503,
             detail=f"Model loading error: {models['error']}",
@@ -156,18 +156,17 @@ def get_audio_file(filename: str):
     return FileResponse(resolved_path, media_type="audio/wav", filename=safe_filename)
 
 
-@app.get("/",
-         responses={
+@app.get(
+    "/",
+    responses={
         503: {
             "description": "Models still loading...",
             "content": {
-                "application/json": {
-                    "example": {"detail": "Models still loading..."}
-                }
-            }
+                "application/json": {"example": {"detail": "Models still loading..."}}
+            },
         }
-    }
-         )
+    },
+)
 def serve_frontend():
     """Serves the simple HTML frontend."""
     frontend_path = os.path.join(

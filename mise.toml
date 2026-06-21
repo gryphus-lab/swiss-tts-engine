@@ -59,6 +59,10 @@ alias = "gen"
 
 [tasks.docker-build]
 description = "Build the Docker image for the Swiss TTS engine"
+run = "docker build -t swiss-tts-engine:latest ."
+
+[tasks.docker-build-fresh]
+description = "Build the Docker image from scratch without cache"
 run = "docker build --no-cache -t swiss-tts-engine:latest ."
 
 [tasks.docker-compose]

@@ -130,4 +130,6 @@ def get_audio_file(filename: str):
 @app.get("/")
 def serve_frontend():
     """Serves the simple HTML frontend."""
-    return FileResponse("public/index.html")
+    frontend_path = os.path.join(os.path.dirname(__file__), "..", "..", "public", "index.html")
+    resolved_path = os.path.abspath(frontend_path)
+    return FileResponse(resolved_path)

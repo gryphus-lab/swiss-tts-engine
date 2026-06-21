@@ -42,7 +42,7 @@
             <label for="translateCheck" style="margin:0;">Translate from Hochdeutsch</label>
         </div>
 
-        <button id="submitBtn" onclick="generateAudio()">Generate Speech</button>
+        <button type="button" id="submitBtn" onclick="generateAudio()">Generate Speech</button>
         <div id="status"></div>
 
         <div id="resultArea">
@@ -88,10 +88,11 @@
                 // Update UI with results
                 translatedOutput.textContent = data.translated_text;
                 // Add a cache-busting timestamp so the browser always loads the newest audio file
-                audioPlayer.src = data.audio_url + "?t=" + new Date().now(); 
+                audioPlayer.src = data.audio_url + "?t=" + Date.now(); 
                 
                 resultArea.style.display = 'block';
                 status.textContent = "Success!";
+                status.style.color = "";
                 audioPlayer.play();
                 
             } catch (err) {

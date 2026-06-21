@@ -67,7 +67,7 @@ def health_check():
     """
     if "error" in models:
         logger.error("Model loading error: %s", models["error"])
-        raise HTTPException(status_code=503, detail=models["error"])
+        raise HTTPException(status_code=503, detail="Service temporarily unavailable")
     if "engine" not in models or "translator" not in models:
         raise HTTPException(status_code=503, detail="Models still loading...")
     return {"status": "ready", "message": "All models loaded and ready."}
@@ -91,7 +91,7 @@ def synthesize_speech(request: TTSRequest):
         logger.error("Model loading error: %s", models["error"])
         raise HTTPException(
             status_code=503,
-            detail=f"Model loading error: {models['error']}",
+            detail="Unable to process request",
         )
 
     if "engine" not in models or "translator" not in models:

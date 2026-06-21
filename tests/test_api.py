@@ -29,7 +29,7 @@ def test_health_check_error_propagates():
     with pytest.raises(HTTPException) as exc:
         api.health_check()
     assert exc.value.status_code == 503
-    assert exc.value.detail == "boom"
+    assert exc.value.detail == "Service temporarily unavailable"
 
 
 def test_synthesize_raises_for_unsupported_dialect():
@@ -114,7 +114,7 @@ def test_synthesize_raises_for_model_loading_error():
         api.synthesize_speech(req)
 
     assert exc.value.status_code == 503
-    assert "Model loading error" in exc.value.detail
+    assert exc.value.detail == "Unable to process request"
 
 
 def test_synthesize_raises_for_model_loading_error_even_when_models_present():
@@ -127,7 +127,7 @@ def test_synthesize_raises_for_model_loading_error_even_when_models_present():
         api.synthesize_speech(req)
 
     assert exc.value.status_code == 503
-    assert "Model loading error" in exc.value.detail
+    assert exc.value.detail == "Unable to process request"
 
 
 def test_synthesize_raises_when_models_not_ready():

@@ -197,7 +197,6 @@ def test_generate_dialect_speech_sample_rate_passed_to_soundfile(monkeypatch, tm
 
 def test_engine_sets_spembs_from_spk_embed_dim(monkeypatch):
     """When use_spembs=True and tts has spk_embed_dim, kwargs['spembs'] should be set."""
-    import torch
 
     class SpembsText2Speech:
         def __init__(self, *args, **kwargs):

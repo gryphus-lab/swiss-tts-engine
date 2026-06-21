@@ -1,4 +1,5 @@
 # src/swiss_tts/api.py
+import logging
 import os
 import threading
 from contextlib import asynccontextmanager
@@ -9,6 +10,8 @@ from pydantic import BaseModel
 from swiss_tts.main import SwissTTSEngine
 from swiss_tts.translator import DialectTranslator
 from swiss_tts import config
+
+logger = logging.getLogger(__name__)
 
 # Global state for our models so they persist across requests
 models = {}
@@ -49,14 +52,22 @@ app = FastAPI(
 class TTSRequest(BaseModel):
     text: str
     dialect: str = "zurich"
-    translate: bool = True  # Set to True if input is Hochdeutsch
 
 
 @app.get("/health")
 def health_check():
-    """Check if API is running and if models are loaded."""
+    """
+    Indicate whether the service is ready to handle requests.
+
+    Returns:
+        dict: A dictionary with "status" and "message" fields indicating successful model loading.
+
+    Raises:
+        HTTPException: With status code 503 if model loading has failed or models are still loading.
+    """
     if "error" in models:
-        raise HTTPException(status_code=503, detail=models["error"])
+        logger.error("Model loading error: %s", models["error"])
+        raise HTTPException(status_code=503, detail="Service temporarily unavailable")
     if "engine" not in models or "translator" not in models:
         raise HTTPException(status_code=503, detail="Models still loading...")
     return {"status": "ready", "message": "All models loaded and ready."}
@@ -64,29 +75,32 @@ def health_check():
 
 @app.post("/api/v1/synthesize")
 def synthesize_speech(request: TTSRequest):
-    """Generates audio from text and returns a URL to download the file."""
-    # Check if models are ready
-    if "error" in models:
-        raise HTTPException(
-            status_code=503, detail=f"Model loading error: {models['error']}"
-        )
-    if "engine" not in models or "translator" not in models:
-        raise HTTPException(
-            status_code=503, detail="Models still loading. Try again in a few moments."
-        )
+    """
+    Translate text to the specified dialect and generate synthesized speech audio.
 
+    Returns:
+        dict: Contains the synthesis status, requested dialect, translated text, and audio file URL.
+    """
     if request.dialect not in config.SUPPORTED_DIALECTS:
         raise HTTPException(
             status_code=400,
             detail=f"Unsupported dialect. Choose from {config.SUPPORTED_DIALECTS}",
         )
 
-    # 1. Translate if requested
-    final_text = request.text
-    if request.translate:
-        final_text = models["translator"].translate_to_dialect(
-            request.text, request.dialect
+    if "error" in models:
+        logger.error("Model loading error: %s", models["error"])
+        raise HTTPException(
+            status_code=503,
+            detail="Unable to process request",
         )
+
+    if "engine" not in models or "translator" not in models:
+        raise HTTPException(status_code=503, detail="Models still loading...")
+
+    # 1. ALWAYS format the text phonetically via the LLM
+    final_text = models["translator"].translate_to_dialect(
+        request.text, request.dialect
+    )
 
     # 2. Synthesize audio
     try:
@@ -100,7 +114,6 @@ def synthesize_speech(request: TTSRequest):
 
     filename = os.path.basename(output_path)
 
-    # Return the text actually spoken, and the URL to download the .wav
     return {
         "status": "success",
         "dialect": request.dialect,
@@ -143,7 +156,17 @@ def get_audio_file(filename: str):
     return FileResponse(resolved_path, media_type="audio/wav", filename=safe_filename)
 
 
-@app.get("/")
+@app.get(
+    "/",
+    responses={
+        503: {
+            "description": "Models still loading...",
+            "content": {
+                "application/json": {"example": {"detail": "Models still loading..."}}
+            },
+        }
+    },
+)
 def serve_frontend():
     """Serves the simple HTML frontend."""
     frontend_path = os.path.join(

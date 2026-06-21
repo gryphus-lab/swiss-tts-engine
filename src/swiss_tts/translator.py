@@ -7,26 +7,46 @@ from openai import OpenAI
 
 class DialectTranslator:
     def __init__(self):
+        """
+        Initialize the translator with a connection to a local Ollama server.
+
+        The Ollama server URL can be configured via the OLLAMA_URL environment variable,
+        defaulting to http://localhost:11434/v1 if not set.
+        """
         ollama_url = os.getenv("OLLAMA_URL", "http://localhost:11434/v1")
 
         # Point the standard OpenAI client to your local Ollama server
         self.client = OpenAI(base_url=ollama_url, api_key="ollama", timeout=30)
 
-    def translate_to_dialect(self, hochdeutsch_text: str, target_dialect: str) -> str:
-        """Translates standard High German into phonetic Swiss German using a local LLM."""
-        print(f"🌍 Translating to {target_dialect.upper()} via Local Open-Source AI...")
+    def translate_to_dialect(self, input_text: str, target_dialect: str) -> str:
+        """
+        Translate text to a specified Swiss German dialect in phonetic form.
+
+        The function accepts input text in any language and produces output with numbers spelled out as words.
+
+        Parameters:
+            target_dialect (str): The target Swiss German dialect name.
+
+        Returns:
+            str: The translated text in phonetic form with numbers spelled out as words.
+
+        Raises:
+            ValueError: If the API response contains no valid choices.
+        """
+        print(f"🌍 Translating to {target_dialect.upper()} via Local AI...")
 
         prompt = f"""
-        You are an expert in Swiss German dialects. 
-        Translate the following standard High German (Hochdeutsch) text into the '{target_dialect}' Swiss German dialect.
-        
+        You are an expert in Swiss German dialects.
+        Translate the following standard High German text into the '{target_dialect}' Swiss German dialect.
+        The input text may be in English, High German, or any other language.
+
         CRITICAL RULES:
         1. Write the dialect PHONETICALLY so a text-to-speech engine can read it accurately.
         2. Spell out numbers entirely as words (e.g., 'vierhundert' instead of '400').
         3. Output ONLY the translated text. No explanations, no markdown, no quotes.
-        
+
         Text to translate:
-        {hochdeutsch_text}
+        {input_text}
         """
 
         try:

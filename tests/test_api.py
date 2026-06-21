@@ -5,7 +5,7 @@ import pytest
 from fastapi import HTTPException
 from fastapi.responses import FileResponse
 
-from swiss_tts import api, config
+from swiss_tts import api
 
 
 @pytest.fixture(autouse=True)
@@ -29,7 +29,7 @@ def test_health_check_error_propagates():
     with pytest.raises(HTTPException) as exc:
         api.health_check()
     assert exc.value.status_code == 503
-    assert exc.value.detail == "boom"
+    assert exc.value.detail == "Service temporarily unavailable"
 
 
 def test_synthesize_raises_for_unsupported_dialect():
@@ -114,7 +114,20 @@ def test_synthesize_raises_for_model_loading_error():
         api.synthesize_speech(req)
 
     assert exc.value.status_code == 503
-    assert "Model loading error" in exc.value.detail
+    assert exc.value.detail == "Unable to process request"
+
+
+def test_synthesize_raises_for_model_loading_error_even_when_models_present():
+    api.models["error"] = "boom"
+    api.models["engine"] = SimpleNamespace()
+    api.models["translator"] = SimpleNamespace()
+    req = api.TTSRequest(text="Hallo", dialect="zurich", translate=False)
+
+    with pytest.raises(HTTPException) as exc:
+        api.synthesize_speech(req)
+
+    assert exc.value.status_code == 503
+    assert exc.value.detail == "Unable to process request"
 
 
 def test_synthesize_raises_when_models_not_ready():
@@ -134,7 +147,9 @@ def test_synthesize_raises_on_engine_exception(monkeypatch):
             raise RuntimeError("synthesis failed")
 
     api.models["engine"] = BrokenEngine()
-    api.models["translator"] = SimpleNamespace(translate_to_dialect=lambda text, dialect: text)
+    api.models["translator"] = SimpleNamespace(
+        translate_to_dialect=lambda text, dialect: text
+    )
 
     req = api.TTSRequest(text="Hallo", dialect="zurich", translate=True)
     with pytest.raises(HTTPException) as exc:

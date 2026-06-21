@@ -1,10 +1,7 @@
 import importlib
 import json
 import pathlib
-from pathlib import Path
 from unittest import mock
-
-import pytest
 
 from swiss_tts import config
 

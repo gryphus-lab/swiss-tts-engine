@@ -5,7 +5,7 @@ import pytest
 from fastapi import HTTPException
 from fastapi.responses import FileResponse
 
-from swiss_tts import api, config
+from swiss_tts import api
 
 
 @pytest.fixture(autouse=True)

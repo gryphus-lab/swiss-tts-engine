@@ -62,8 +62,8 @@
         <div id="status"></div>
 
         <div id="resultArea">
-            <label for="translatedOutput">Phonetic Dialect Translation:</label>
-            <section id="translatedOutput" class="translated-text" aria-live="polite"></section>
+            <p id="translatedOutputLabel">Phonetic Dialect Translation:</p>
+            <section id="translatedOutput" class="translated-text" aria-live="polite" aria-labelledby="translatedOutputLabel"></section>
             <audio id="audioPlayer" controls></audio>
         </div>
     </div>
@@ -78,7 +78,9 @@
             const checkHealth = async () => {
                 attempts++;
                 try {
-                    const response = await fetch('/health');
+                    const response = await fetch('/health', {
+                        signal: AbortSignal.timeout(400)
+                    });
                     if (response.ok) {
                         const data = await response.json();
                         if (data.status === 'ready') {

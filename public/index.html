@@ -44,19 +44,14 @@
         <h1>🇨🇭 Swiss TTS Engine</h1>
         
         <label for="textInput">Text Input</label>
-        <textarea id="textInput" placeholder="Enter standard High German text here...">Guten Tag, mein Name ist Abhay. Ich rufe wegen einer Zahlung an.</textarea>
-        
+        <textarea id="textInput" placeholder="Enter text in any language (English, German, French, etc.)...">Hello, my name is Abhay. I am calling about a payment.</textarea>
+              
         <label for="dialectSelect">Target Dialect</label>
         <select id="dialectSelect">
             <option value="zurich">Zürich (Züritüütsch)</option>
             <option value="bern">Bern (Bärndütsch)</option>
             <option value="basel">Basel (Baaseldytsch)</option>
         </select>
-
-        <div class="checkbox-group">
-            <input type="checkbox" id="translateCheck" checked>
-            <label for="translateCheck">Translate from Hochdeutsch</label>
-        </div>
 
         <button type="button" id="submitBtn" onclick="generateAudio()" disabled>Generate Speech</button>
         <div id="status"></div>

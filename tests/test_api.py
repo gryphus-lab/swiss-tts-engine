@@ -117,6 +117,19 @@ def test_synthesize_raises_for_model_loading_error():
     assert "Model loading error" in exc.value.detail
 
 
+def test_synthesize_raises_for_model_loading_error_even_when_models_present():
+    api.models["error"] = "boom"
+    api.models["engine"] = SimpleNamespace()
+    api.models["translator"] = SimpleNamespace()
+    req = api.TTSRequest(text="Hallo", dialect="zurich", translate=False)
+
+    with pytest.raises(HTTPException) as exc:
+        api.synthesize_speech(req)
+
+    assert exc.value.status_code == 503
+    assert "Model loading error" in exc.value.detail
+
+
 def test_synthesize_raises_when_models_not_ready():
     api.models["engine"] = SimpleNamespace()
     req = api.TTSRequest(text="Hallo", dialect="zurich", translate=False)

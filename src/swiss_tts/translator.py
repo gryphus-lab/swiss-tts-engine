@@ -12,13 +12,14 @@ class DialectTranslator:
         # Point the standard OpenAI client to your local Ollama server
         self.client = OpenAI(base_url=ollama_url, api_key="ollama", timeout=30)
 
-    def translate_to_dialect(self, hochdeutsch_text: str, target_dialect: str) -> str:
-        """Translates standard High German into phonetic Swiss German using a local LLM."""
-        print(f"🌍 Translating to {target_dialect.upper()} via Local Open-Source AI...")
+    def translate_to_dialect(self, input_text: str, target_dialect: str) -> str:
+        """Translates text from ANY language into phonetic Swiss German."""
+        print(f"🌍 Translating to {target_dialect.upper()} via Local AI...")
 
         prompt = f"""
         You are an expert in Swiss German dialects. 
-        Translate the following standard High German (Hochdeutsch) text into the '{target_dialect}' Swiss German dialect.
+        Translate the following standard High German text into the '{target_dialect}' Swiss German dialect. 
+        The input text may be in English, High German, or any other language.
         
         CRITICAL RULES:
         1. Write the dialect PHONETICALLY so a text-to-speech engine can read it accurately.
@@ -26,7 +27,7 @@ class DialectTranslator:
         3. Output ONLY the translated text. No explanations, no markdown, no quotes.
         
         Text to translate:
-        {hochdeutsch_text}
+        {input_text}
         """
 
         try:

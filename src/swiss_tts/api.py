@@ -65,47 +65,37 @@ def health_check():
 @app.post("/api/v1/synthesize")
 def synthesize_speech(request: TTSRequest):
     """Generates audio from text and returns a URL to download the file."""
-    # Check if models are ready
-    if "error" in models:
-        raise HTTPException(
-            status_code=503, detail=f"Model loading error: {models['error']}"
-        )
-    if "engine" not in models or "translator" not in models:
-        raise HTTPException(
-            status_code=503, detail="Models still loading. Try again in a few moments."
-        )
-
     if request.dialect not in config.SUPPORTED_DIALECTS:
         raise HTTPException(
-            status_code=400,
-            detail=f"Unsupported dialect. Choose from {config.SUPPORTED_DIALECTS}",
+            status_code=400, 
+            detail=f"Unsupported dialect. Choose from {config.SUPPORTED_DIALECTS}"
         )
 
-    # 1. Translate if requested
-    final_text = request.text
-    if request.translate:
-        final_text = models["translator"].translate_to_dialect(
-            request.text, request.dialect
-        )
+    if "error" in models:
+        raise HTTPException(status_code=503, detail=f"Model loading error: {models['error']}")
+
+    if "engine" not in models or "translator" not in models:
+        raise HTTPException(status_code=503, detail="Models still loading...")
+
+    # 1. ALWAYS format the text phonetically via the LLM
+    final_text = models["translator"].translate_to_dialect(request.text, request.dialect)
 
     # 2. Synthesize audio
     try:
         output_path = models["engine"].generate_dialect_speech(
-            text=final_text, dialect_name=request.dialect
+            text=final_text,
+            dialect_name=request.dialect
         )
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Audio generation failed: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Audio generation failed: {str(e)}")
 
     filename = os.path.basename(output_path)
-
-    # Return the text actually spoken, and the URL to download the .wav
+    
     return {
         "status": "success",
         "dialect": request.dialect,
         "translated_text": final_text,
-        "audio_url": f"/api/v1/audio/{filename}",
+        "audio_url": f"/api/v1/audio/{filename}"
     }
 
 

@@ -7,13 +7,24 @@ from openai import OpenAI
 
 class DialectTranslator:
     def __init__(self):
+        """
+        Initialize the translator with a connection to a local Ollama server.
+        
+        The Ollama server URL can be configured via the OLLAMA_URL environment variable,
+        defaulting to http://localhost:11434/v1 if not set.
+        """
         ollama_url = os.getenv("OLLAMA_URL", "http://localhost:11434/v1")
 
         # Point the standard OpenAI client to your local Ollama server
         self.client = OpenAI(base_url=ollama_url, api_key="ollama", timeout=30)
 
     def translate_to_dialect(self, input_text: str, target_dialect: str) -> str:
-        """Translates text from ANY language into phonetic Swiss German."""
+        """
+        Translates text to a specified Swiss German dialect in phonetic form suitable for text-to-speech synthesis.
+        
+        Returns:
+            str: The translated text in phonetic form with numbers spelled out as words.
+        """
         print(f"🌍 Translating to {target_dialect.upper()} via Local AI...")
 
         prompt = f"""

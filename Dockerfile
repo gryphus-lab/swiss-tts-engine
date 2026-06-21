@@ -22,6 +22,9 @@ COPY src/ ./src/
 # Create a virtual environment and install dependencies via uv (frozen lock)
 RUN uv venv && uv sync --frozen
 
+# Copy public directory after dependencies are installed (changes won't invalidate dep cache)
+COPY public/ ./public/
+
 # Put the virtual environment on the system PATH
 ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \

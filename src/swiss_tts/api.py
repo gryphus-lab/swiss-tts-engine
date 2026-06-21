@@ -111,7 +111,22 @@ def synthesize_speech(request: TTSRequest):
 
 @app.get("/api/v1/audio/{filename}")
 def get_audio_file(filename: str):
-    """Endpoint to fetch the generated .wav file."""
+    """
+    Serve a generated audio file from the output directory with path traversal protection.
+
+    Validates that the requested file path remains within the audio_output directory to prevent
+    directory traversal attacks.
+
+    Parameters:
+        filename (str): The requested audio filename.
+
+    Returns:
+        FileResponse: The audio file with audio/wav media type.
+
+    Raises:
+        HTTPException: With status 400 if the file path is invalid or outside the audio_output directory;
+                with status 404 if the file does not exist.
+    """
     # Prevent path traversal by stripping directory components
     safe_filename = os.path.basename(filename)
     file_path = os.path.join("audio_output", safe_filename)
@@ -126,3 +141,13 @@ def get_audio_file(filename: str):
         raise HTTPException(status_code=404, detail="Audio file not found on server.")
 
     return FileResponse(resolved_path, media_type="audio/wav", filename=safe_filename)
+
+
+@app.get("/")
+def serve_frontend():
+    """Serves the simple HTML frontend."""
+    frontend_path = os.path.join(
+        os.path.dirname(__file__), "..", "..", "public", "index.html"
+    )
+    resolved_path = os.path.abspath(frontend_path)
+    return FileResponse(resolved_path)

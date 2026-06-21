@@ -1,4 +1,6 @@
+import importlib
 import json
+import pathlib
 from pathlib import Path
 from unittest import mock
 
@@ -85,13 +87,33 @@ def test_load_texts_from_json_reads_config_texts_json(tmp_path, monkeypatch):
 
 def test_default_texts_fallback_to_defaults():
     with mock.patch("swiss_tts.config._load_texts_from_json", return_value=None):
-        # Force re-evaluation of module-level logic
-        _json_texts = config._load_texts_from_json()
-        if _json_texts is not None:
-            DEFAULT_TEXTS = _json_texts
-        else:
-            DEFAULT_TEXTS = config.DEFAULT_FALLBACK_TEXTS
-        assert DEFAULT_TEXTS == config.DEFAULT_FALLBACK_TEXTS
+        importlib.reload(config)
+        assert config.DEFAULT_TEXTS == config.DEFAULT_FALLBACK_TEXTS
+
+
+def test_default_texts_loads_json_when_available(monkeypatch, tmp_path):
+    repo_root = tmp_path / "repo"
+    (repo_root / "config").mkdir(parents=True)
+    (repo_root / "config" / "texts.json").write_text(
+        json.dumps({"zurich": "Grüezi"}), encoding="utf8"
+    )
+
+    class DummyPath:
+        def __init__(self, *args):
+            pass
+
+        def resolve(self):
+            class Resolved:
+                parents = [None, None, repo_root]
+
+            return Resolved()
+
+    monkeypatch.setattr(pathlib, "Path", DummyPath)
+    monkeypatch.setattr(config, "Path", DummyPath)
+    monkeypatch.setattr(config, "_read_json_file", lambda path: {"zurich": "Grüezi"})
+    importlib.reload(config)
+
+    assert config.DEFAULT_TEXTS == {"zurich": "Grüezi"}
 
 
 # --- Additional tests for changed code in this PR ---

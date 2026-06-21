@@ -93,3 +93,114 @@ def test_get_audio_file_returns_fileresponse(tmp_path):
     resp = api.get_audio_file(fname)
     assert isinstance(resp, FileResponse)
     assert resp.filename == fname
+
+
+def test_health_check_ready_when_models_present():
+    api.models["engine"] = SimpleNamespace()
+    api.models["translator"] = SimpleNamespace()
+
+    result = api.health_check()
+    assert result == {
+        "status": "ready",
+        "message": "All models loaded and ready.",
+    }
+
+
+def test_synthesize_raises_for_model_loading_error():
+    api.models["error"] = "engine failed"
+    req = api.TTSRequest(text="Hallo", dialect="zurich", translate=False)
+
+    with pytest.raises(HTTPException) as exc:
+        api.synthesize_speech(req)
+
+    assert exc.value.status_code == 503
+    assert "Model loading error" in exc.value.detail
+
+
+def test_synthesize_raises_when_models_not_ready():
+    api.models["engine"] = SimpleNamespace()
+    req = api.TTSRequest(text="Hallo", dialect="zurich", translate=False)
+
+    with pytest.raises(HTTPException) as exc:
+        api.synthesize_speech(req)
+
+    assert exc.value.status_code == 503
+    assert "Models still loading" in exc.value.detail
+
+
+def test_synthesize_raises_on_engine_exception(monkeypatch):
+    class BrokenEngine:
+        def generate_dialect_speech(self, text, dialect_name):
+            raise RuntimeError("synthesis failed")
+
+    api.models["engine"] = BrokenEngine()
+    api.models["translator"] = SimpleNamespace(translate_to_dialect=lambda text, dialect: text)
+
+    req = api.TTSRequest(text="Hallo", dialect="zurich", translate=True)
+    with pytest.raises(HTTPException) as exc:
+        api.synthesize_speech(req)
+
+    assert exc.value.status_code == 500
+    assert "Audio generation failed" in exc.value.detail
+
+
+def test_load_models_background_sets_models_success(monkeypatch):
+    class DummyEngine:
+        pass
+
+    class DummyTranslator:
+        pass
+
+    monkeypatch.setattr(api, "SwissTTSEngine", DummyEngine)
+    monkeypatch.setattr(api, "DialectTranslator", DummyTranslator)
+
+    api.models.clear()
+    api._load_models_background()
+
+    assert isinstance(api.models["engine"], DummyEngine)
+    assert isinstance(api.models["translator"], DummyTranslator)
+
+
+def test_load_models_background_captures_exception(monkeypatch):
+    class DummyTranslator:
+        pass
+
+    def failing_engine():
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(api, "SwissTTSEngine", failing_engine)
+    monkeypatch.setattr(api, "DialectTranslator", DummyTranslator)
+
+    api.models.clear()
+    api._load_models_background()
+
+    assert api.models["error"] == "boom"
+
+
+def test_lifespan_creates_audio_output_and_clears_models(monkeypatch, tmp_path):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(api, "_load_models_background", lambda: None)
+
+    import asyncio
+
+    async def run_context():
+        async with api.lifespan(api.app):
+            assert os.path.isdir(tmp_path / "audio_output")
+            assert api.models == {}
+
+    asyncio.run(run_context())
+    assert api.models == {}
+
+
+def test_get_audio_file_rejects_empty_filename():
+    with pytest.raises(HTTPException) as exc:
+        api.get_audio_file("")
+
+    assert exc.value.status_code == 400
+    assert "Invalid file path" in exc.value.detail
+
+
+def test_serve_frontend_returns_index_html():
+    resp = api.serve_frontend()
+    assert isinstance(resp, FileResponse)
+    assert resp.path.endswith("public/index.html")

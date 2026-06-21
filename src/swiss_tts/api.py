@@ -57,13 +57,13 @@ class TTSRequest(BaseModel):
 @app.get("/health")
 def health_check():
     """
-    Check if the service is ready and all models are loaded.
-
+    Indicate whether the service is ready to handle requests.
+    
     Returns:
-        dict: A status object containing "status" and "message" fields.
-
+        dict: A dictionary with "status" and "message" fields indicating successful model loading.
+    
     Raises:
-        HTTPException: With status code 503 if models failed to load or are still loading.
+        HTTPException: With status code 503 if model loading has failed or models are still loading.
     """
     if "error" in models:
         logger.error(f"Model loading error: {models['error']}")
@@ -76,10 +76,10 @@ def health_check():
 @app.post("/api/v1/synthesize")
 def synthesize_speech(request: TTSRequest):
     """
-    Generate synthesized speech audio from text in the specified dialect.
-
+    Translate text to the specified dialect and generate synthesized speech audio.
+    
     Returns:
-        dict: Response containing the status, requested dialect, translated text, and audio file URL.
+        dict: Contains the synthesis status, requested dialect, translated text, and audio file URL.
     """
     if request.dialect not in config.SUPPORTED_DIALECTS:
         raise HTTPException(

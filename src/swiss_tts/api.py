@@ -156,7 +156,18 @@ def get_audio_file(filename: str):
     return FileResponse(resolved_path, media_type="audio/wav", filename=safe_filename)
 
 
-@app.get("/")
+@app.get("/",
+         responses={
+        503: {
+            "description": "Models still loading...",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Models still loading..."}
+                }
+            }
+        }
+    }
+         )
 def serve_frontend():
     """Serves the simple HTML frontend."""
     frontend_path = os.path.join(

@@ -90,7 +90,7 @@
                         }
                     }
                 } catch (err) {
-                    // API not ready yet, continue polling
+                    console.log(`Exception while polling API endpoint: ${err} . Continue loading....`);
                 }
 
                 if (attempts >= maxAttempts) {

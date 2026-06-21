@@ -134,7 +134,9 @@ def test_synthesize_raises_on_engine_exception(monkeypatch):
             raise RuntimeError("synthesis failed")
 
     api.models["engine"] = BrokenEngine()
-    api.models["translator"] = SimpleNamespace(translate_to_dialect=lambda text, dialect: text)
+    api.models["translator"] = SimpleNamespace(
+        translate_to_dialect=lambda text, dialect: text
+    )
 
     req = api.TTSRequest(text="Hallo", dialect="zurich", translate=True)
     with pytest.raises(HTTPException) as exc:

@@ -51,12 +51,73 @@ If you have activated the virtual environment manually:
 ```bash
 source .venv/bin/activate
 python -m src.swiss_tts.main
+```
 
-Or run the REST API locally with Uvicorn:
+## REST API
+
+Run the REST API server locally with Uvicorn:
 
 ```bash
 uv run uvicorn src.swiss_tts.api:app --reload --port 8000
 ```
+
+### API Endpoints
+
+#### Health Check
+
+- **GET** `/health`
+  - Returns API status and model readiness
+  - Response: `{"status": "ready", "message": "All models loaded and ready."}`
+
+#### Synthesize Speech
+
+- **POST** `/api/v1/synthesize`
+  - Translates text to a target dialect and generates audio
+  - Request body:
+
+    ```json
+    {
+      "text": "Your text here",
+      "dialect": "zurich",
+      "translate": true
+    }
+    ```
+
+  - `dialect` options: `zurich`, `bern`, `basel`
+  - `translate`: Set to `true` if input is Hochdeutsch (standard High German)
+  - Response:
+
+    ```json
+    {
+      "status": "success",
+      "dialect": "zurich",
+      "translated_text": "translated text in dialect",
+      "audio_url": "/api/v1/audio/zurich_speech.wav"
+    }
+    ```
+
+#### Download Audio File
+
+- **GET** `/api/v1/audio/{filename}`
+  - Downloads a generated audio WAV file
+  - Path traversal protection prevents directory escape attacks
+  - Returns: WAV file with `audio/wav` media type
+
+#### Web UI
+
+- **GET** `/`
+  - Serves a simple HTML frontend for interactive speech synthesis
+  - Access at `http://localhost:8000`
+
+The included web interface at `public/index.html` provides a user-friendly way to interact with the TTS engine:
+
+- **Text Input** – Enter text in standard High German (Hochdeutsch) or Swiss German
+- **Dialect Selection** – Choose from available dialects: Zurich, Bern, or Basel
+- **Translation Toggle** – Enable automatic translation from Hochdeutsch to the target dialect
+- **Audio Playback** – Listen to the generated speech directly in the browser
+- **Download** – Save generated audio files to your device
+
+Simply run the API server and open your browser to `http://localhost:8000`.
 
 ## Usage example
 
@@ -107,16 +168,16 @@ mise run test
 or directly:
 
 ```bash
-uv run pytest --cov=src --cov-report=xml:coverage.xml
+uv run pytest --cov=swiss_tts --cov-report=xml:coverage.xml
 ```
 
-There are dedicated tests for:
+The test suite achieves **100% code coverage** across the package. There are comprehensive tests for:
 
-- `tests/test_config.py`
-- `tests/test_main.py`
-- `tests/test_translator.py`
-- `tests/test_api.py` (unit tests for `src/swiss_tts/api.py` helpers)
-- `tests/test_api_client.py` (integration-style tests using FastAPI `TestClient`)
+- `tests/test_config.py` – Configuration loading, text normalization, JSON parsing
+- `tests/test_main.py` – Speech generation, audio processing, model initialization
+- `tests/test_translator.py` – LLM-based dialect translation with Ollama
+- `tests/test_api.py` – API endpoints, error handling, model lifecycle
+- `tests/test_api_client.py` – Integration tests using FastAPI `TestClient`
 
 When running tests locally, the translator client is mocked so the suite does not require a live OpenAI or Ollama server.
 

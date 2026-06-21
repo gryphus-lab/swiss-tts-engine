@@ -26,7 +26,7 @@ jobs:
       - name: Run tests
         run: mise run test
 
-      - name: SonarQube
-        uses: sonarsource/sonarqube-scan-action@master
+      - name: Analyze with SonarCloud
+        uses: SonarSource/sonarcloud-github-action@4006f663ecaf1f8093e8e4abb9227f6041f52216
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

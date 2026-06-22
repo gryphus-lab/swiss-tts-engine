@@ -7,6 +7,11 @@ import { Audio } from 'expo-av';
 const MAC_IP = "192.168.1.102"; //NOSONAR
 const API_URL = `http://${MAC_IP}:8000/api/v1`;
 
+/**
+ * Renders the main interface for a Swiss dialect text-to-speech application.
+ * 
+ * Enables users to input text, select a Swiss dialect (Zürich, Bern, or Basel), and generate synthesized speech played over the network.
+ */
 export default function App() {
   const [text, setText] = useState('Guten Tag, mein Name ist Abhay Singh.');
   const [dialect, setDialect] = useState('zurich');

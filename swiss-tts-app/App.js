@@ -3,6 +3,10 @@ import { StyleSheet, Text, View, TextInput, TouchableOpacity, ActivityIndicator,
 import { Picker } from '@react-native-picker/picker';
 import { Audio } from 'expo-av';
 
+if (!process.env.EXPO_PUBLIC_API_IP) {
+  throw new Error('EXPO_PUBLIC_API_IP environment variable is not defined. Please configure it in your .env file.');
+}
+
 const API_URL = `http://${process.env.EXPO_PUBLIC_API_IP}:8000/api/v1`;
 
 /**
@@ -57,6 +61,9 @@ export default function App() {
       }
 
       // 2. Play the synthesized .wav back directly over Wi-Fi
+      if (!process.env.EXPO_PUBLIC_API_IP) {
+        throw new Error('EXPO_PUBLIC_API_IP environment variable is not defined. Please configure it in your .env file.');
+      }
       const audioUrl = `http://${process.env.EXPO_PUBLIC_API_IP}:8000${data.audio_url}?t=${new Date().getTime()}`;
 
       // Unload previous sound if it exists

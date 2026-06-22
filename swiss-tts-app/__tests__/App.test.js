@@ -1,3 +1,9 @@
+// ---------------------------------------------------------------------------
+// Environment variable - MUST be set before importing App
+// ---------------------------------------------------------------------------
+const MOCK_API_IP = '192.168.1.100';
+process.env.EXPO_PUBLIC_API_IP = MOCK_API_IP;
+
 import React from 'react';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { Alert } from 'react-native';
@@ -28,26 +34,13 @@ jest.mock('@react-native-picker/picker', () => {
   const Picker = ({ children, onValueChange, selectedValue, testID, ...rest }) =>
     React.createElement(
       View,
-      { testID: testID || 'picker', ...rest },
+      { testID: testID || 'picker', onValueChange, selectedValue, ...rest },
       children
     );
 
   Picker.Item = ({ label, value }) => null;
 
   return { Picker };
-});
-
-// ---------------------------------------------------------------------------
-// Environment variable
-// ---------------------------------------------------------------------------
-const MOCK_API_IP = '192.168.1.100';
-
-beforeAll(() => {
-  process.env.EXPO_PUBLIC_API_IP = MOCK_API_IP;
-});
-
-afterAll(() => {
-  delete process.env.EXPO_PUBLIC_API_IP;
 });
 
 // ---------------------------------------------------------------------------
@@ -119,9 +112,9 @@ describe('App rendering', () => {
   });
 
   it('does not show ActivityIndicator on initial render', () => {
-    const { queryByTestId } = render(<App />);
+    const { queryByTestId, getByText } = render(<App />);
     // ActivityIndicator has no testID by default; ensure the button exists as a proxy
-    const { getByText } = render(<App />);
+    expect(queryByTestId('activity-indicator')).toBeFalsy();
     expect(getByText('Speak Dialect')).toBeTruthy();
   });
 });
@@ -218,7 +211,7 @@ describe('generateAndPlayAudio – success path', () => {
       expect.objectContaining({
         uri: expect.stringMatching(
           new RegExp(
-            `^http://${MOCK_API_IP.replace('.', '\\.')}:8000/audio/test\\.wav\\?t=\\d+$`
+            `^http://${MOCK_API_IP.replace(/\./g, '\\.')}:8000/audio/test\\.wav\\?t=\\d+$`
           )
         ),
       }),

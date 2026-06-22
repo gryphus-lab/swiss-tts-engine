@@ -211,7 +211,7 @@ describe('generateAndPlayAudio – success path', () => {
       expect.objectContaining({
         uri: expect.stringMatching(
           new RegExp(
-            `^http://${MOCK_API_IP.replace(/\./g, '\\.')}:8000/audio/test\\.wav\\?t=\\d+$`
+            `^http://${MOCK_API_IP.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}:8000/audio/test\\.wav\\?t=\\d+$`
           )
         ),
       }),

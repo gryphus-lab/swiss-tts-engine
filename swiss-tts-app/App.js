@@ -10,9 +10,9 @@ if (!process.env.EXPO_PUBLIC_API_IP) {
 const API_URL = `http://${process.env.EXPO_PUBLIC_API_IP}:8000/api/v1`;
 
 /**
- * Renders the main interface for a Swiss dialect text-to-speech application.
+ * Swiss dialect text-to-speech interface for mobile.
  * 
- * Enables users to input text, select a Swiss dialect (Zürich, Bern, or Basel), and generate synthesized speech played over the network.
+ * Allows users to input text, select a Swiss dialect (Zürich, Bern, or Basel), and synthesize speech via network API.
  */
 export default function App() {
   const [text, setText] = useState('Guten Tag, mein Name ist Abhay Singh.');
@@ -28,6 +28,9 @@ export default function App() {
     };
   }, []);
 
+  /**
+   * Synthesizes text-to-speech for the selected dialect and plays the resulting audio.
+   */
   async function generateAndPlayAudio() {
     // Validate text input
     if (!text || text.trim() === '') {

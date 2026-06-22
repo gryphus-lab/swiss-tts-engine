@@ -1,11 +1,9 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { Audio } from 'expo-av';
 
-// ⚠️ CHANGE THIS to your Mac's local Wi-Fi IP address
-const MAC_IP = "192.168.1.102"; //NOSONAR
-const API_URL = `http://${MAC_IP}:8000/api/v1`;
+const API_URL = `http://${process.env.EXPO_PUBLIC_API_IP}:8000/api/v1`;
 
 export default function App() {
   const [text, setText] = useState('Guten Tag, mein Name ist Abhay Singh.');
@@ -13,7 +11,21 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [sound, setSound] = useState(null);
 
+  useEffect(() => {
+    return () => {
+      if (sound) {
+        sound.unloadAsync();
+      }
+    };
+  }, []);
+
   async function generateAndPlayAudio() {
+    // Validate text input
+    if (!text || text.trim() === '') {
+      Alert.alert('Input Required', 'Please enter some text to synthesize.');
+      return;
+    }
+
     setLoading(true);
     try {
       // 1. Request audio generation from the FastAPI container
@@ -22,26 +34,67 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text, dialect })
       });
-      
-      if (!response.ok) throw new Error("Server error");
-      const data = await response.json();
-      
+
+      if (!response.ok) {
+        if (response.status >= 500) {
+          throw new Error(`SERVER_ERROR:${response.status}`);
+        } else if (response.status >= 400) {
+          throw new Error(`CLIENT_ERROR:${response.status}`);
+        }
+        throw new Error(`HTTP_ERROR:${response.status}`);
+      }
+
+      let data;
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        throw new Error('JSON_PARSE_ERROR');
+      }
+
       // 2. Play the synthesized .wav back directly over Wi-Fi
-      const audioUrl = `http://${MAC_IP}:8000${data.audio_url}?t=${new Date().getTime()}`;
-      
+      const audioUrl = `http://${process.env.EXPO_PUBLIC_API_IP}:8000${data.audio_url}?t=${new Date().getTime()}`;
+
       // Unload previous sound if it exists
       if (sound) {
         await sound.unloadAsync();
       }
 
-      const { sound: newSound } = await Audio.Sound.createAsync(
-        { uri: audioUrl },
-        { shouldPlay: true }
-      );
-      setSound(newSound);
+      let newSound;
+      try {
+        const result = await Audio.Sound.createAsync(
+          { uri: audioUrl },
+          { shouldPlay: true }
+        );
+        newSound = result.sound;
+        setSound(newSound);
+      } catch (audioError) {
+        if (newSound) {
+          await newSound.unloadAsync();
+        }
+        throw new Error('AUDIO_PLAYBACK_ERROR');
+      }
 
     } catch (error) {
-      alert("Playback failed. Ensure Docker is running and your Mac IP is correct.");
+      let errorMessage = 'An unexpected error occurred.';
+
+      if (error.message === 'AUDIO_PLAYBACK_ERROR') {
+        errorMessage = 'Failed to load or play the audio file. Please check your connection and try again.';
+      } else if (error.message === 'JSON_PARSE_ERROR') {
+        errorMessage = 'Server returned an invalid response. Please try again.';
+      } else if (error.message.startsWith('SERVER_ERROR:')) {
+        const status = error.message.split(':')[1];
+        errorMessage = `Server error (${status}). The service may be temporarily unavailable.`;
+      } else if (error.message.startsWith('CLIENT_ERROR:')) {
+        const status = error.message.split(':')[1];
+        errorMessage = `Request error (${status}). Please check your input and try again.`;
+      } else if (error.message.startsWith('HTTP_ERROR:')) {
+        const status = error.message.split(':')[1];
+        errorMessage = `HTTP error (${status}). Please try again.`;
+      } else if (error.message === 'Network request failed' || error.name === 'TypeError') {
+        errorMessage = 'Network connection failed. Ensure Docker is running and your API IP is configured correctly.';
+      }
+
+      Alert.alert('Error', errorMessage);
     } finally {
       setLoading(false);
     }

@@ -66,4 +66,4 @@ RUN adduser -D -u 1000 appuser && \
 USER appuser
 
 EXPOSE 8081
-CMD ["npx", "expo", "start", "--lan", "-c", "--config", "./swiss-tts-app/app.json"]
+CMD ["npx", "expo", "start", "--lan", "-c", "--config", "./app.json"]

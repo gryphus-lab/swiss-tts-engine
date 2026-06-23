@@ -17,6 +17,7 @@
     "expo-status-bar": "~3.0.9",
     "react": "19.1.0",
     "react-native": "0.81.5",
+    "react-native-url-polyfill": "^3.0.0",
     "syncpack": "^15.3.2"
   },
   "devDependencies": {

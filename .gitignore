@@ -5,6 +5,7 @@ __pycache__/
 .pytest_cache/
 .coverage
 coverage.xml
+coverage/
 
 # Environments (uv / local virtualenvs)
 .venv/
@@ -12,6 +13,9 @@ build/
 dist/
 *.egg-info/
 .env
+node_modules/
+.idea/
+**/.DS_Store
 
 # Local tools & IDE configs
 .mise.local.toml
@@ -19,3 +23,26 @@ dist/
 
 # Audio outputs (keep the folder structure but ignore generated audio files)
 audio_output/*.wav
+
+ Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*

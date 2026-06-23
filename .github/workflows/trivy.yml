@@ -29,14 +29,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-            fetch-depth: 0
+          fetch-depth: 0
+          persist-credentials: false
 
       - name: Build docker image
         run: |
           docker build -t gryphus-lab/swiss-tts-engine:${{ github.sha }} .
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
         with:
           image-ref: "gryphus-lab/swiss-tts-engine:${{ github.sha }}"
           format: "template"

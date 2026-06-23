@@ -1,10 +1,9 @@
-# docker-compose.yml
 services:
   swiss-tts-api:
     build:
       context: .
-      dockerfile: Dockerfile
-    container_name: swiss-tts-api
+      target: backend
+    container_name: swiss-tts-backend-api
     ports:
       - "8000:8000"
     environment:
@@ -42,6 +41,24 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  swiss-tts-app:
+    build:
+      context: .
+      target: frontend
+    container_name: swiss-tts-mobile-app
+    tty: true
+    stdin_open: true
+    ports:
+      - "8081:8081"
+    environment:
+      - REACT_NATIVE_PACKAGER_HOSTNAME=${HOST_IP}
+      - EXPO_PUBLIC_API_IP=${HOST_IP}
+      - NODE_OPTIONS=--no-warnings
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      - swiss-tts-api
+
 volumes:
-  # Define the named volume for persistent AI model caching
   espnet_model_cache:

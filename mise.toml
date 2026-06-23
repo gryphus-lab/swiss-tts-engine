@@ -1,6 +1,7 @@
 [tools]
 python = "3.12"
 uv = 'latest'
+prettier = 'latest'
 
 # Automatic virtual environment
 [env]
@@ -24,7 +25,7 @@ echo "Virtual env: $VIRTUAL_ENV"
 # Dependency management
 [tasks.setup]
 description = "Install dependencies and create the local virtual environment"
-run = "uv sync"
+run = ["uv sync", "npm install"]
 
 [tasks.add]
 description = "Add a new dependency to the project"
@@ -36,20 +37,20 @@ run = "uv sync --upgrade"
 
 # Code quality
 [tasks.lint]
-description = "Run Ruff linting checks"
-run = "uv run ruff check ."
+description = "Run linting checks with Prettier and Ruff"
+run = ["npm run lint", "uv run ruff check ."]
 
 [tasks.format]
-description = "Format code with Ruff"
-run = "uv run ruff format ."
+description = "Format code with Prettier and Ruff"
+run = ["npm run format", "uv run ruff format ."]
 
 [tasks.check]
 description = "Run linting and tests"
 run = "uv run ruff check . && uv run pytest"
 
 [tasks.test]
-description = "Run the test suite"
-run = "uv run pytest --cov=src --cov-report=xml:coverage.xml"
+description = "Run the test suites"
+run = ["uv run pytest --cov=src --cov-report=xml:coverage.xml", "npm run test"]
 
 # Application tasks
 [tasks.generate]
@@ -67,4 +68,12 @@ run = "docker build --no-cache -t swiss-tts-engine:latest . -f Dockerfile"
 
 [tasks.docker-compose]
 description = "Run the application using Docker Compose"
-run = "docker-compose up -d"
+run = "docker compose up -d"
+
+[tasks.docker-cleanup]
+description = "Cleanup the docker containers and remove images"
+run = "docker compose down -v --rmi all"
+
+[tasks.docker-app-logs]
+description = "Print the mobile app docker logs"
+run = "docker compose logs -f swiss-tts-app"

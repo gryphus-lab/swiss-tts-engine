@@ -1,38 +1,77 @@
-# Use the official Python 3.12 slim image
-FROM python:3.12-slim
+# ==========================================
+# STAGE 1: Builder - Swiss TTS Backend Engine
+# ==========================================
+FROM python:3.12-slim AS builder
 
-# Install system dependencies required for audio processing and native builds
+WORKDIR /app
+
+# Install build dependencies (only needed during compilation)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
-    curl \
-    libsndfile1 \
+    libsndfile1-dev \
     python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Grab the ultra-fast uv executable from Astral's official image
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
+# Copy the uv binary
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-# Set the working directory inside the container
-WORKDIR /app
-
-# Copy dependency definitions and lock file FIRST (maximize layer cache)
+# Copy dependency files and README (hatchling requires README)
 COPY pyproject.toml uv.lock README.md ./
-COPY src/ ./src/
 
-# Create a virtual environment and install dependencies via uv (frozen lock)
+# Copy source code (needed for editable install)
+COPY src/ ./src
+
+# Create virtual environment and install dependencies
 RUN uv venv && uv sync --frozen
 
-# Copy public directory after dependencies are installed (changes won't invalidate dep cache)
-COPY public/ ./public/
+# ==========================================
+# STAGE 2: Runtime - Swiss TTS Backend Engine
+# ==========================================
+FROM python:3.12-slim AS backend
 
-# Put the virtual environment on the system PATH
+WORKDIR /app
+
+# Install only runtime dependencies (libsndfile1, no build tools)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    libsndfile1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy virtual environment from builder
+COPY --from=builder /app/.venv /app/.venv
+
+# Copy source code and static web UI files (for package imports and public assets)
+COPY src/ ./src
+COPY public/ ./public
+
+# Set environment variables
 ENV PATH="/app/.venv/bin:$PATH" \
+    PYTHONPATH="/app/src:$PYTHONPATH" \
     PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONHASHSEED=random
 
 # Healthcheck to detect when API is ready
 HEALTHCHECK --interval=10s --timeout=5s --start-period=45s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Set the default command to run the FastAPI server
-CMD ["uvicorn", "swiss_tts.api:app", "--host", "0.0.0.0", "--port", "8000"]
+EXPOSE 8000
+CMD ["uvicorn", "src.swiss_tts.api:app", "--host", "0.0.0.0", "--port", "8000"]
+
+# ==========================================
+# STAGE 3: Expo Mobile Frontend
+# ==========================================
+FROM node:20-alpine AS frontend
+
+# Move into the app folder so expo finds app.json automatically
+WORKDIR /app
+
+# Copy only the package files first to leverage Docker cache
+COPY package*.json ./
+RUN npm ci --ignore-scripts
+
+# Copy the rest of the project
+COPY . .
+
+EXPOSE 8081
+CMD ["./node_modules/.bin/expo", "start", "--lan", "-c"]

@@ -1,159 +1,292 @@
 <!-- public/index.html -->
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Swiss TTS Engine</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f4f5; color: #18181b; max-width: 600px; margin: 40px auto; padding: 20px; }
-        .card { background: white; padding: 24px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); }
-        h1 { margin-top: 0; font-size: 1.5rem; color: #e11d48; }
-        label { display: block; margin: 12px 0 4px; font-weight: 600; font-size: 0.9rem; }
-        textarea, select { width: 100%; padding: 10px; border: 1px solid #e4e4e7; border-radius: 6px; box-sizing: border-box; font-family: inherit; margin-bottom: 12px; }
-        textarea { resize: vertical; min-height: 80px; }
-        .checkbox-group { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
-        .checkbox-group label { margin: 0; }
-        button { background: #e11d48; color: white; border: none; padding: 12px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; width: 100%; transition: background 0.2s; }
-        button:hover { background: #be123c; }
-        button:disabled { background: #fca5a5; cursor: not-allowed; }
-        #resultArea { margin-top: 24px; display: none; padding-top: 20px; border-top: 1px solid #e4e4e7; }
-        .translated-text { background: #f8fafc; padding: 12px; border-radius: 6px; font-style: italic; margin-bottom: 16px; font-size: 0.95rem; color: #475569; }
-        audio { width: 100%; }
-        #status { text-align: center; margin-top: 12px; font-size: 0.9rem; color: #64748b; }
-        #loadingOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-        .loading-spinner { text-align: center; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2); }
-        .spinner { border: 4px solid #f0f0f0; border-top: 4px solid #e11d48; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 16px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .loading-text { font-size: 1rem; color: #18181b; font-weight: 500; }
-        .loading-subtext { font-size: 0.85rem; color: #64748b; margin-top: 8px; }
-        #loadingOverlay.hidden { display: none; }
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+          Arial, sans-serif;
+        background-color: #f4f4f5;
+        color: #18181b;
+        max-width: 600px;
+        margin: 40px auto;
+        padding: 20px;
+      }
+      .card {
+        background: white;
+        padding: 24px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      }
+      h1 {
+        margin-top: 0;
+        font-size: 1.5rem;
+        color: #e11d48;
+      }
+      label {
+        display: block;
+        margin: 12px 0 4px;
+        font-weight: 600;
+        font-size: 0.9rem;
+      }
+      textarea,
+      select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #e4e4e7;
+        border-radius: 6px;
+        box-sizing: border-box;
+        font-family: inherit;
+        margin-bottom: 12px;
+      }
+      textarea {
+        resize: vertical;
+        min-height: 80px;
+      }
+      .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 20px;
+      }
+      .checkbox-group label {
+        margin: 0;
+      }
+      button {
+        background: #e11d48;
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        width: 100%;
+        transition: background 0.2s;
+      }
+      button:hover {
+        background: #be123c;
+      }
+      button:disabled {
+        background: #fca5a5;
+        cursor: not-allowed;
+      }
+      #resultArea {
+        margin-top: 24px;
+        display: none;
+        padding-top: 20px;
+        border-top: 1px solid #e4e4e7;
+      }
+      .translated-text {
+        background: #f8fafc;
+        padding: 12px;
+        border-radius: 6px;
+        font-style: italic;
+        margin-bottom: 16px;
+        font-size: 0.95rem;
+        color: #475569;
+      }
+      audio {
+        width: 100%;
+      }
+      #status {
+        text-align: center;
+        margin-top: 12px;
+        font-size: 0.9rem;
+        color: #64748b;
+      }
+      #loadingOverlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+      }
+      .loading-spinner {
+        text-align: center;
+        background: white;
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      }
+      .spinner {
+        border: 4px solid #f0f0f0;
+        border-top: 4px solid #e11d48;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 16px;
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+      .loading-text {
+        font-size: 1rem;
+        color: #18181b;
+        font-weight: 500;
+      }
+      .loading-subtext {
+        font-size: 0.85rem;
+        color: #64748b;
+        margin-top: 8px;
+      }
+      #loadingOverlay.hidden {
+        display: none;
+      }
     </style>
-</head>
-<body>
-
+  </head>
+  <body>
     <div id="loadingOverlay">
-        <div class="loading-spinner">
-            <div class="spinner"></div>
-            <div class="loading-text">Initializing API...</div>
-            <div class="loading-subtext">Waiting for models to load</div>
-        </div>
+      <div class="loading-spinner">
+        <div class="spinner"></div>
+        <div class="loading-text">Initializing API...</div>
+        <div class="loading-subtext">Waiting for models to load</div>
+      </div>
     </div>
 
     <div class="card">
-        <h1>🇨🇭 Swiss TTS Engine</h1>
-        
-        <label for="textInput">Text Input</label>
-        <textarea id="textInput" placeholder="Enter text in any language (English, German, French, etc.)...">Hello, how are you today?</textarea>
-              
-        <label for="dialectSelect">Target Dialect</label>
-        <select id="dialectSelect">
-            <option value="zurich">Zürich (Züritüütsch)</option>
-            <option value="bern">Bern (Bärndütsch)</option>
-            <option value="basel">Basel (Baaseldytsch)</option>
-        </select>
+      <h1>🇨🇭 Swiss TTS Engine</h1>
 
-        <button type="button" id="submitBtn" onclick="generateAudio()" disabled>Generate Speech</button>
-        <div id="status"></div>
+      <label for="textInput">Text Input</label>
+      <textarea
+        id="textInput"
+        placeholder="Enter text in any language (English, German, French, etc.)..."
+      >
+Hello, how are you today?</textarea
+      >
 
-        <div id="resultArea">
-            <p id="translatedOutputLabel">Phonetic Dialect Translation:</p>
-            <section id="translatedOutput" class="translated-text" aria-live="polite" aria-labelledby="translatedOutputLabel"></section>
-            <audio id="audioPlayer" controls></audio>
-        </div>
+      <label for="dialectSelect">Target Dialect</label>
+      <select id="dialectSelect">
+        <option value="zurich">Zürich (Züritüütsch)</option>
+        <option value="bern">Bern (Bärndütsch)</option>
+        <option value="basel">Basel (Baaseldytsch)</option>
+      </select>
+
+      <button type="button" id="submitBtn" onclick="generateAudio()" disabled>
+        Generate Speech
+      </button>
+      <div id="status"></div>
+
+      <div id="resultArea">
+        <p id="translatedOutputLabel">Phonetic Dialect Translation:</p>
+        <section
+          id="translatedOutput"
+          class="translated-text"
+          aria-live="polite"
+          aria-labelledby="translatedOutputLabel"
+        ></section>
+        <audio id="audioPlayer" controls></audio>
+      </div>
     </div>
 
     <script>
-        // Poll health endpoint until API is ready
-        async function pollHealth() {
-            const loadingOverlay = document.getElementById('loadingOverlay');
-            const maxAttempts = 60; // 30 seconds with 500ms intervals
-            let attempts = 0;
+      // Poll health endpoint until API is ready
+      async function pollHealth() {
+        const loadingOverlay = document.getElementById("loadingOverlay");
+        const maxAttempts = 60; // 30 seconds with 500ms intervals
+        let attempts = 0;
 
-            const checkHealth = async () => {
-                attempts++;
-                try {
-                    const response = await fetch('/health', {
-                        signal: AbortSignal.timeout(800)
-                    });
-                    if (response.ok) {
-                        const data = await response.json();
-                        if (data.status === 'ready') {
-                            loadingOverlay.classList.add('hidden');
-                            document.getElementById('submitBtn').disabled = false;
-                            return true;
-                        }
-                    }
-                } catch (err) {
-                    console.log(`Exception while polling API endpoint: ${err}. Continue loading....`);
-                }
-
-                if (attempts >= maxAttempts) {
-                    document.getElementById('status').textContent = 'Error: API failed to start. Please refresh the page.';
-                    document.getElementById('status').style.color = '#e11d48';
-                    document.getElementById('submitBtn').disabled = true;
-                    loadingOverlay.classList.add('hidden');
-                    return false;
-                }
-
-                // Poll again after 500ms
-                setTimeout(checkHealth, 500);
-            };
-
-            checkHealth();
-        }
-
-        // Start polling when page loads
-        window.addEventListener('load', pollHealth);
-
-        async function generateAudio() {
-            const btn = document.getElementById('submitBtn');
-            const status = document.getElementById('status');
-            const resultArea = document.getElementById('resultArea');
-            const audioPlayer = document.getElementById('audioPlayer');
-            const translatedOutput = document.getElementById('translatedOutput');
-
-            // Reset UI
-            btn.disabled = true;
-            status.textContent = "Translating and generating audio... (This may take a few seconds)";
-            resultArea.style.display = 'none';
-
-            const payload = {
-                text: document.getElementById('textInput').value,
-                dialect: document.getElementById('dialectSelect').value
-            };
-
-            try {
-                const response = await fetch('/api/v1/synthesize', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.detail || "Server error");
-                }
-
-                const data = await response.json();
-                
-                // Update UI with results
-                translatedOutput.textContent = data.translated_text;
-                // Add a cache-busting timestamp so the browser always loads the newest audio file
-                audioPlayer.src = data.audio_url + "?t=" + Date.now(); 
-                
-                resultArea.style.display = 'block';
-                status.textContent = "Success!";
-                status.style.color = "";
-                audioPlayer.play();
-                
-            } catch (err) {
-                status.textContent = "Error: " + err.message;
-                status.style.color = "#e11d48";
-            } finally {
-                btn.disabled = false;
+        const checkHealth = async () => {
+          attempts++;
+          try {
+            const response = await fetch("/health", {
+              signal: AbortSignal.timeout(800),
+            });
+            if (response.ok) {
+              const data = await response.json();
+              if (data.status === "ready") {
+                loadingOverlay.classList.add("hidden");
+                document.getElementById("submitBtn").disabled = false;
+                return true;
+              }
             }
+          } catch (err) {
+            console.log(
+              `Exception while polling API endpoint: ${err}. Continue loading....`,
+            );
+          }
+
+          if (attempts >= maxAttempts) {
+            document.getElementById("status").textContent =
+              "Error: API failed to start. Please refresh the page.";
+            document.getElementById("status").style.color = "#e11d48";
+            document.getElementById("submitBtn").disabled = true;
+            loadingOverlay.classList.add("hidden");
+            return false;
+          }
+
+          // Poll again after 500ms
+          setTimeout(checkHealth, 500);
+        };
+
+        checkHealth();
+      }
+
+      // Start polling when page loads
+      window.addEventListener("load", pollHealth);
+
+      async function generateAudio() {
+        const btn = document.getElementById("submitBtn");
+        const status = document.getElementById("status");
+        const resultArea = document.getElementById("resultArea");
+        const audioPlayer = document.getElementById("audioPlayer");
+        const translatedOutput = document.getElementById("translatedOutput");
+
+        // Reset UI
+        btn.disabled = true;
+        status.textContent =
+          "Translating and generating audio... (This may take a few seconds)";
+        resultArea.style.display = "none";
+
+        const payload = {
+          text: document.getElementById("textInput").value,
+          dialect: document.getElementById("dialectSelect").value,
+        };
+
+        try {
+          const response = await fetch("/api/v1/synthesize", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || "Server error");
+          }
+
+          const data = await response.json();
+
+          // Update UI with results
+          translatedOutput.textContent = data.translated_text;
+          // Add a cache-busting timestamp so the browser always loads the newest audio file
+          audioPlayer.src = data.audio_url + "?t=" + Date.now();
+
+          resultArea.style.display = "block";
+          status.textContent = "Success!";
+          status.style.color = "";
+          await audioPlayer.play();
+        } catch (err) {
+          status.textContent = "Error: " + err.message;
+          status.style.color = "#e11d48";
+        } finally {
+          btn.disabled = false;
         }
+      }
     </script>
-</body>
+  </body>
 </html>

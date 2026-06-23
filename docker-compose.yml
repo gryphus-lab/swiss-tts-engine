@@ -6,9 +6,40 @@ services:
     container_name: swiss-tts-backend-api
     ports:
       - "8000:8000"
+    environment:
+      # Route LLM requests to the Ollama instance running on your Mac
+      - OLLAMA_URL=http://host.docker.internal:11434/v1
+    extra_hosts:
+      # Ensures host.docker.internal resolves correctly across different OS environments
+      - "host.docker.internal:host-gateway"
     volumes:
-      - ./src:/app/src
+      # Map the local audio folder so you can access the generated files
       - ./audio_output:/app/audio_output
+      # CRITICAL: Cache the 700MB+ ESPnet models so they don't re-download on every restart!
+      - espnet_model_cache:/root/.cache
+    # Restart on failure and keep container running
+    restart: unless-stopped
+    # Resource limits to prevent runaway memory usage
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 4G
+        reservations:
+          cpus: "1"
+          memory: 2G
+    # Health check (Docker will report container status)
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   swiss-tts-app:
     build:
@@ -28,3 +59,6 @@ services:
       - /app/node_modules
     depends_on:
       - swiss-tts-api
+
+volumes:
+  espnet_model_cache:

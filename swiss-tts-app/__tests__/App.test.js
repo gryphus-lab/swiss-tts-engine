@@ -816,13 +816,10 @@ describe("Additional App coverage", () => {
       fireEvent.press(getByText("Speak Dialect"));
     });
 
-    expect(mockCreateAsync).toHaveBeenCalledWith(
-      expect.objectContaining({
-        uri: expect.stringContaining("undefined"),
-      }),
-      {
-        shouldPlay: true,
-      },
+    expect(mockCreateAsync).not.toHaveBeenCalled();
+    expect(Alert.alert).toHaveBeenCalledWith(
+      "Error",
+      "Server returned an invalid response. Please try again.",
     );
   });
 

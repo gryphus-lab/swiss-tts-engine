@@ -51,12 +51,6 @@ ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONHASHSEED=random
 
-# Create non-root user and set permissions
-RUN useradd -m -u 1000 appuser && \
-    chown -R appuser:appuser /app
-
-USER appuser
-
 # Healthcheck to detect when API is ready
 HEALTHCHECK --interval=10s --timeout=5s --start-period=45s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
@@ -69,20 +63,15 @@ CMD ["uvicorn", "src.swiss_tts.api:app", "--host", "0.0.0.0", "--port", "8000"]
 # ==========================================
 FROM node:20-alpine AS frontend
 
+# Move into the app folder so expo finds app.json automatically
 WORKDIR /app
-RUN apk add --no-cache bash
 
-# Copy package configurations relative to the root context
-COPY swiss-tts-app/package*.json ./
-RUN npm install --ignore-scripts
+# Copy only the package files first to leverage Docker cache
+COPY package*.json ./
+RUN npm ci
 
-# Copy the rest of the mobile application source code
-COPY swiss-tts-app/ .
-
-# User already exists in node:alpine as 'node', just set permissions
-RUN chown -R node:node /app
-
-USER node
+# Copy the rest of the project
+COPY . .
 
 EXPOSE 8081
-CMD ["npx", "expo", "start", "--lan", "-c", "--config", "./app.json"]
+CMD ["./node_modules/.bin/expo", "start", "--lan", "-c"]

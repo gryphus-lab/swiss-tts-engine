@@ -79,7 +79,7 @@ beforeEach(() => {
   jest.spyOn(Alert, "alert").mockImplementation(() => {});
 
   // Default: successful fetch response
-  global.fetch = jest.fn().mockResolvedValue(
+  globalThis.fetch = jest.fn().mockResolvedValue(
     makeFetchResponse({
       ok: true,
       status: 200,
@@ -155,7 +155,7 @@ describe("generateAndPlayAudio – input validation", () => {
       "Input Required",
       "Please enter some text to synthesize.",
     );
-    expect(global.fetch).not.toHaveBeenCalled();
+    expect(globalThis.fetch).not.toHaveBeenCalled();
   });
 
   it('shows "Input Required" alert when text contains only whitespace', async () => {
@@ -174,7 +174,7 @@ describe("generateAndPlayAudio – input validation", () => {
       "Input Required",
       "Please enter some text to synthesize.",
     );
-    expect(global.fetch).not.toHaveBeenCalled();
+    expect(globalThis.fetch).not.toHaveBeenCalled();
   });
 
   it("does not show an alert and proceeds with fetch when text is valid", async () => {
@@ -188,7 +188,7 @@ describe("generateAndPlayAudio – input validation", () => {
       "Input Required",
       expect.any(String),
     );
-    expect(global.fetch).toHaveBeenCalled();
+    expect(globalThis.fetch).toHaveBeenCalled();
   });
 });
 
@@ -204,7 +204,7 @@ describe("generateAndPlayAudio – success path", () => {
       fireEvent.press(getByText("Speak Dialect"));
     });
 
-    expect(global.fetch).toHaveBeenCalledWith(
+    expect(globalThis.fetch).toHaveBeenCalledWith(
       `http://${MOCK_API_IP}:8000/api/v1/synthesize`,
       expect.objectContaining({
         method: "POST",
@@ -228,7 +228,7 @@ describe("generateAndPlayAudio – success path", () => {
       expect.objectContaining({
         uri: expect.stringMatching(
           new RegExp(
-            `^http://${MOCK_API_IP.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}:8000/audio/test\\.wav\\?t=\\d+$`,
+            String.raw`^http://${MOCK_API_IP.replace(/[.*+?^${}()|[\]\\]/g, '$&')}:8000/audio/test\\.wav\\?t=\\d+$`,
           ),
         ),
       }),
@@ -269,7 +269,7 @@ describe("generateAndPlayAudio – success path", () => {
 
 describe("generateAndPlayAudio – HTTP error handling", () => {
   it("shows server error message for 5xx responses", async () => {
-    global.fetch = jest
+    globalThis.fetch = jest
       .fn()
       .mockResolvedValue(
         makeFetchResponse({ ok: false, status: 503, json: {} }),
@@ -288,7 +288,7 @@ describe("generateAndPlayAudio – HTTP error handling", () => {
   });
 
   it("shows server error message for 500 responses", async () => {
-    global.fetch = jest
+    globalThis.fetch = jest
       .fn()
       .mockResolvedValue(
         makeFetchResponse({ ok: false, status: 500, json: {} }),
@@ -307,7 +307,7 @@ describe("generateAndPlayAudio – HTTP error handling", () => {
   });
 
   it("shows client error message for 4xx responses", async () => {
-    global.fetch = jest
+    globalThis.fetch = jest
       .fn()
       .mockResolvedValue(
         makeFetchResponse({ ok: false, status: 422, json: {} }),
@@ -326,7 +326,7 @@ describe("generateAndPlayAudio – HTTP error handling", () => {
   });
 
   it("shows client error message for 400 responses", async () => {
-    global.fetch = jest
+    globalThis.fetch = jest
       .fn()
       .mockResolvedValue(
         makeFetchResponse({ ok: false, status: 400, json: {} }),
@@ -345,7 +345,7 @@ describe("generateAndPlayAudio – HTTP error handling", () => {
   });
 
   it("shows generic HTTP error message for non-4xx/5xx error codes", async () => {
-    global.fetch = jest
+    globalThis.fetch = jest
       .fn()
       .mockResolvedValue(
         makeFetchResponse({ ok: false, status: 301, json: {} }),
@@ -375,7 +375,7 @@ describe("generateAndPlayAudio – JSON parse error", () => {
       status: 200,
       json: jest.fn().mockRejectedValue(new SyntaxError("Unexpected token")),
     };
-    global.fetch = jest.fn().mockResolvedValue(badResponse);
+    globalThis.fetch = jest.fn().mockResolvedValue(badResponse);
 
     const { getByText } = render(<App />);
 
@@ -418,7 +418,7 @@ describe("generateAndPlayAudio – audio playback error", () => {
 describe("generateAndPlayAudio – network errors", () => {
   it('shows network error message when fetch throws "Network request failed"', async () => {
     const networkError = new Error("Network request failed");
-    global.fetch = jest.fn().mockRejectedValue(networkError);
+    globalThis.fetch = jest.fn().mockRejectedValue(networkError);
 
     const { getByText } = render(<App />);
 
@@ -434,7 +434,7 @@ describe("generateAndPlayAudio – network errors", () => {
 
   it("shows network error message when fetch throws a TypeError", async () => {
     const typeError = new TypeError("Failed to fetch");
-    global.fetch = jest.fn().mockRejectedValue(typeError);
+    globalThis.fetch = jest.fn().mockRejectedValue(typeError);
 
     const { getByText } = render(<App />);
 
@@ -450,7 +450,7 @@ describe("generateAndPlayAudio – network errors", () => {
 
   it("shows generic unexpected error message for unknown errors", async () => {
     const unknownError = new Error("Something completely unexpected");
-    global.fetch = jest.fn().mockRejectedValue(unknownError);
+    globalThis.fetch = jest.fn().mockRejectedValue(unknownError);
 
     const { getByText } = render(<App />);
 
@@ -484,7 +484,7 @@ describe("generateAndPlayAudio – loading state", () => {
   });
 
   it("resets loading to false even when an error occurs", async () => {
-    global.fetch = jest
+    globalThis.fetch = jest
       .fn()
       .mockRejectedValue(new Error("Network request failed"));
 
@@ -579,7 +579,7 @@ describe("App state management", () => {
       fireEvent.press(getByText("Speak Dialect"));
     });
 
-    expect(global.fetch).toHaveBeenCalledWith(
+    expect(globalThis.fetch).toHaveBeenCalledWith(
       expect.any(String),
       expect.objectContaining({
         body: JSON.stringify({ text: "Wie geht es Ihnen?", dialect: "zurich" }),
@@ -594,7 +594,7 @@ describe("App state management", () => {
       fireEvent.press(getByText("Speak Dialect"));
     });
 
-    expect(global.fetch).toHaveBeenCalledWith(
+    expect(globalThis.fetch).toHaveBeenCalledWith(
       expect.any(String),
       expect.objectContaining({
         body: expect.stringContaining('"dialect":"zurich"'),
@@ -613,7 +613,7 @@ describe("App state management", () => {
       fireEvent.press(getByText("Speak Dialect"));
     });
 
-    expect(global.fetch).toHaveBeenCalledWith(
+    expect(globalThis.fetch).toHaveBeenCalledWith(
       expect.any(String),
       expect.objectContaining({
         body: JSON.stringify({
@@ -634,7 +634,7 @@ describe("App state management", () => {
       fireEvent.press(getByText("Speak Dialect"));
     });
 
-    expect(global.fetch).toHaveBeenCalledWith(
+    expect(globalThis.fetch).toHaveBeenCalledWith(
       expect.any(String),
       expect.objectContaining({
         body: JSON.stringify({
@@ -670,7 +670,7 @@ describe("generateAndPlayAudio – boundary and regression cases", () => {
   });
 
   it("handles a 404 response as a client error (4xx)", async () => {
-    global.fetch = jest
+    globalThis.fetch = jest
       .fn()
       .mockResolvedValue(
         makeFetchResponse({ ok: false, status: 404, json: {} }),
@@ -689,7 +689,7 @@ describe("generateAndPlayAudio – boundary and regression cases", () => {
   });
 
   it("does not call Audio.Sound.createAsync when the HTTP response is not ok", async () => {
-    global.fetch = jest
+    globalThis.fetch = jest
       .fn()
       .mockResolvedValue(
         makeFetchResponse({ ok: false, status: 500, json: {} }),
@@ -705,7 +705,7 @@ describe("generateAndPlayAudio – boundary and regression cases", () => {
   });
 
   it("does not call Audio.Sound.createAsync when JSON parsing fails", async () => {
-    global.fetch = jest.fn().mockResolvedValue({
+    globalThis.fetch = jest.fn().mockResolvedValue({
       ok: true,
       status: 200,
       json: jest.fn().mockRejectedValue(new SyntaxError("bad json")),
@@ -721,7 +721,7 @@ describe("generateAndPlayAudio – boundary and regression cases", () => {
   });
 
   it("shows only one alert per failed request", async () => {
-    global.fetch = jest
+    globalThis.fetch = jest
       .fn()
       .mockRejectedValue(new Error("Network request failed"));
 
@@ -743,7 +743,7 @@ describe("Additional App coverage", () => {
   it("shows ActivityIndicator while a request is pending", async () => {
     let resolveFetch;
 
-    global.fetch = jest.fn().mockImplementation(
+    globalThis.fetch = jest.fn().mockImplementation(
       () =>
         new Promise((resolve) => {
           resolveFetch = resolve;
@@ -804,7 +804,7 @@ describe("Additional App coverage", () => {
   });
 
   it("handles API response without audio_url", async () => {
-    global.fetch = jest.fn().mockResolvedValue({
+    globalThis.fetch = jest.fn().mockResolvedValue({
       ok: true,
       status: 200,
       json: jest.fn().mockResolvedValue({}),
@@ -824,7 +824,7 @@ describe("Additional App coverage", () => {
   });
 
   it("handles HTTP status 0 failures", async () => {
-    global.fetch = jest.fn().mockResolvedValue(
+    globalThis.fetch = jest.fn().mockResolvedValue(
       makeFetchResponse({
         ok: false,
         status: 0,
@@ -860,7 +860,7 @@ describe("Additional App coverage", () => {
       fireEvent.press(getByText("Speak Dialect"));
     });
 
-    expect(global.fetch).toHaveBeenCalledWith(
+    expect(globalThis.fetch).toHaveBeenCalledWith(
       expect.any(String),
       expect.objectContaining({
         body: JSON.stringify({

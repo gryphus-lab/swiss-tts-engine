@@ -68,11 +68,11 @@ run = "docker build --no-cache -t swiss-tts-engine:latest . -f Dockerfile"
 
 [tasks.docker-compose]
 description = "Run the application using Docker Compose"
-run = "docker-compose up -d"
+run = "docker compose up -d"
 
 [tasks.docker-cleanup]
 description = "Cleanup the docker containers and remove images"
-run = "docker-compose down -v --rmi all"
+run = "docker compose down -v --rmi all"
 
 [tasks.docker-app-logs]
 description = "Print the mobile app docker logs"

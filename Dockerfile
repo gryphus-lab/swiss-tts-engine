@@ -22,7 +22,7 @@ COPY pyproject.toml uv.lock README.md ./
 COPY src/ ./src
 
 # Create virtual environment and install dependencies
-RUN uv venv && uv sync --frozen
+RUN uv venv && uv sync --frozen --no-build
 
 # ==========================================
 # STAGE 2: Runtime - Swiss TTS Backend Engine
@@ -68,7 +68,7 @@ WORKDIR /app
 
 # Copy only the package files first to leverage Docker cache
 COPY package*.json ./
-RUN npm ci
+RUN npm ci --ignore-scripts
 
 # Copy the rest of the project
 COPY . .

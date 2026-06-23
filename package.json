@@ -7,7 +7,7 @@
     "android": "expo start --android --config ./swiss-tts-app/app.json",
     "lint": "prettier --check .",
     "format": "prettier --write .",
-    "test": "jest"
+    "test": "jest --coverage"
   },
   "dependencies": {
     "@react-native-picker/picker": "2.11.1",

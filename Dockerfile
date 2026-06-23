@@ -31,12 +31,18 @@ ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
+# Create non-root user and set permissions
+RUN useradd -m -u 1000 appuser && \
+    chown -R appuser:appuser /app
+
+USER appuser
+
 # Healthcheck to detect when API is ready
 HEALTHCHECK --interval=10s --timeout=5s --start-period=45s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
 EXPOSE 8000
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "src.swiss_tts.api:app", "--host", "0.0.0.0", "--port", "8000"]
 
 # ==========================================
 # STAGE 2: Expo Mobile Frontend
@@ -52,6 +58,12 @@ RUN npm install --ignore-scripts
 
 # Copy the rest of the mobile application source code
 COPY swiss-tts-app/ .
+
+# Create non-root user and set permissions
+RUN adduser -D -u 1000 appuser && \
+    chown -R appuser:appuser /app
+
+USER appuser
 
 EXPOSE 8081
 CMD ["npx", "expo", "start", "--lan", "-c", "--config", "./swiss-tts-app/app.json"]

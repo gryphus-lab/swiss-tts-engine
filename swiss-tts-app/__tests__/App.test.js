@@ -534,6 +534,23 @@ describe("generateAndPlayAudio – sound resource management", () => {
 
     expect(firstSoundMock.unloadAsync).toHaveBeenCalled();
   });
+
+  it("calls unloadAsync on the active sound when the component unmounts", async () => {
+    const soundMock = { unloadAsync: jest.fn().mockResolvedValue(undefined) };
+    mockCreateAsync.mockResolvedValueOnce({ sound: soundMock });
+
+    const { getByText, unmount } = render(<App />);
+
+    await act(async () => {
+      fireEvent.press(getByText("Speak Dialect"));
+    });
+
+    expect(soundMock.unloadAsync).not.toHaveBeenCalled();
+
+    unmount();
+
+    expect(soundMock.unloadAsync).toHaveBeenCalled();
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -581,6 +598,49 @@ describe("App state management", () => {
       expect.any(String),
       expect.objectContaining({
         body: expect.stringContaining('"dialect":"zurich"'),
+      }),
+    );
+  });
+
+  it("sends the selected dialect to the API after Picker value changes", async () => {
+    const { getByTestId, getByText } = render(<App />);
+
+    // Simulate the Picker's onValueChange firing with "bern"
+    const picker = getByTestId("picker");
+    fireEvent(picker, "onValueChange", "bern");
+
+    await act(async () => {
+      fireEvent.press(getByText("Speak Dialect"));
+    });
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        body: JSON.stringify({
+          text: "Guten Tag, mein Name ist Abhay Singh.",
+          dialect: "bern",
+        }),
+      }),
+    );
+  });
+
+  it("sends the selected dialect to the API when switching to basel", async () => {
+    const { getByTestId, getByText } = render(<App />);
+
+    const picker = getByTestId("picker");
+    fireEvent(picker, "onValueChange", "basel");
+
+    await act(async () => {
+      fireEvent.press(getByText("Speak Dialect"));
+    });
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        body: JSON.stringify({
+          text: "Guten Tag, mein Name ist Abhay Singh.",
+          dialect: "basel",
+        }),
       }),
     );
   });

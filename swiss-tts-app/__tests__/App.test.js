@@ -2,12 +2,15 @@
 // Environment variable - MUST be set before importing App
 // ---------------------------------------------------------------------------
 const MOCK_API_IP = '192.168.1.100';
+
+// Set environment variable before any imports
 process.env.EXPO_PUBLIC_API_IP = MOCK_API_IP;
 
-import React from 'react';
-import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
-import { Alert } from 'react-native';
-import App from '../App';
+// Import after setting environment variable
+const React = require('react');
+const { render, fireEvent, waitFor, act } = require('@testing-library/react-native');
+const { Alert } = require('react-native');
+const App = require('../App').default;
 
 // ---------------------------------------------------------------------------
 // Module mocks

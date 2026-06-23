@@ -211,8 +211,12 @@ const styles = StyleSheet.create({
   },
   picker: { height: 50, width: "100%" },
   button: {
-    background: "#e11d48",
-    backgroundColor: "#e11d48",
+    button: {
+     backgroundColor: "`#e11d48`",
+     padding: 16,
+     borderRadius: 8,
+     alignItems: "center",
+    },
     padding: 16,
     borderRadius: 8,
     alignItems: "center",

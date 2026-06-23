@@ -4,7 +4,8 @@
   "scripts": {
     "start": "expo start --config ./swiss-tts-app/app.json",
     "android": "expo start --android --config ./swiss-tts-app/app.json",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "test": "jest"
   },
   "dependencies": {
     "@react-native-picker/picker": "2.11.1",

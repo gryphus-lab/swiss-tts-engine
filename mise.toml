@@ -50,10 +50,7 @@ run = "uv run ruff check . && uv run pytest"
 
 [tasks.test]
 description = "Run the test suites"
-run = [
-  "uv run pytest --cov=src --cov-report=xml:coverage.xml",
-  "cd swiss-tts-app && npm run test",
-]
+run = ["uv run pytest --cov=src --cov-report=xml:coverage.xml", "npm run test"]
 
 # Application tasks
 [tasks.generate]

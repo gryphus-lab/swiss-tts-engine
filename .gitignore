@@ -13,6 +13,7 @@ dist/
 *.egg-info/
 .env
 node_modules/
+.idea/
 
 # Local tools & IDE configs
 .mise.local.toml

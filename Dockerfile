@@ -18,8 +18,11 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 # Copy dependency files and README (hatchling requires README)
 COPY pyproject.toml uv.lock README.md ./
 
+# Copy source code (needed for editable install)
+COPY src/ ./src
+
 # Create virtual environment and install dependencies
-RUN uv venv && uv sync --frozen
+RUN uv venv && uv sync
 
 # ==========================================
 # STAGE 2: Runtime - Swiss TTS Backend Engine
@@ -37,12 +40,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy virtual environment from builder
 COPY --from=builder /app/.venv /app/.venv
 
-# Copy source code and configuration files
+# Copy source code and static web UI files (for package imports and public assets)
 COPY src/ ./src
 COPY public/ ./public
 
 # Set environment variables
 ENV PATH="/app/.venv/bin:$PATH" \
+    PYTHONPATH="/app/src:$PYTHONPATH" \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONHASHSEED=random

@@ -26,7 +26,7 @@ echo "🚀 Launching Swiss TTS Monorepo on $OS..."
 echo "📱 Mobile devices should connect to IP: $HOST_IP"
 
 # Spin up Docker using the cross-platform variable
-mise run docker-compose
+mise run docker-cleanup && mise run docker-compose
 
 # Stream the logs for the interactive QR code
 mise run docker-app-logs

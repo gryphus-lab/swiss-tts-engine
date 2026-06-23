@@ -22,7 +22,7 @@ COPY pyproject.toml uv.lock README.md ./
 COPY src/ ./src
 
 # Create virtual environment and install dependencies
-RUN uv venv && uv sync
+RUN uv venv && uv sync --frozen
 
 # ==========================================
 # STAGE 2: Runtime - Swiss TTS Backend Engine

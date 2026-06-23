@@ -24,7 +24,7 @@ echo "Virtual env: $VIRTUAL_ENV"
 # Dependency management
 [tasks.setup]
 description = "Install dependencies and create the local virtual environment"
-run = "uv sync"
+run = "uv sync && cd swiss-tts-app && npm install"
 
 [tasks.add]
 description = "Add a new dependency to the project"

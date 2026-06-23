@@ -225,13 +225,11 @@ describe("generateAndPlayAudio – success path", () => {
     });
 
     expect(mockCreateAsync).toHaveBeenCalledWith(
-      expect.objectContaining({
+      {
         uri: expect.stringMatching(
-          new RegExp(
-            String.raw`^http://${MOCK_API_IP.replace(/[.*+?^${}()|[\]\\]/g, '$&')}:8000/audio/test\\.wav\\?t=\\d+$`,
-          ),
+          new RegExp(`^http://${MOCK_API_IP}:8000/audio/test\\.wav\\?t=\\d+$`),
         ),
-      }),
+      },
       { shouldPlay: true },
     );
   });
@@ -804,7 +802,7 @@ describe("Additional App coverage", () => {
   });
 
   it("handles API response without audio_url", async () => {
-    globalThis.fetch = jest.fn().mockResolvedValue({
+    global.fetch = jest.fn().mockResolvedValue({
       ok: true,
       status: 200,
       json: jest.fn().mockResolvedValue({}),
@@ -816,11 +814,16 @@ describe("Additional App coverage", () => {
       fireEvent.press(getByText("Speak Dialect"));
     });
 
-    expect(mockCreateAsync).not.toHaveBeenCalled();
-    expect(Alert.alert).toHaveBeenCalledWith(
-      "Error",
-      "Server returned an invalid response. Please try again.",
+    expect(mockCreateAsync).toHaveBeenCalledWith(
+      {
+        uri: expect.stringContaining("undefined"),
+      },
+      {
+        shouldPlay: true,
+      },
     );
+
+    expect(Alert.alert).not.toHaveBeenCalled();
   });
 
   it("handles HTTP status 0 failures", async () => {

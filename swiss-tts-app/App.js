@@ -36,7 +36,7 @@ export default function App() {
         sound.unloadAsync();
       }
     };
-  }, []);
+  }, [sound]);
 
   /**
    * Synthesizes text-to-speech for the selected dialect and plays the resulting audio.

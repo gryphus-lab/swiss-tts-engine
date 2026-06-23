@@ -1,4 +1,4 @@
-import 'react-native-url-polyfill/auto';
+import "react-native-url-polyfill/auto";
 import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
@@ -11,6 +11,10 @@ import {
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { Audio } from "expo-av";
+import { registerRootComponent } from "expo";
+
+// This must be called to register the app
+registerRootComponent(App);
 
 if (!process.env.EXPO_PUBLIC_API_IP) {
   throw new Error(

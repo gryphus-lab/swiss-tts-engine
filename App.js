@@ -1,0 +1,1 @@
+export { default } from './swiss-tts-app/App.js';

@@ -1,7 +1,7 @@
 {
   "name": "swiss-tts-engine",
   "version": "1.0.0",
-  "main": "swiss-tts-app/App.js",
+  "main": "node_modules/expo/AppEntry.js",
   "scripts": {
     "start": "expo start --config ./swiss-tts-app/app.json",
     "android": "expo start --android --config ./swiss-tts-app/app.json",

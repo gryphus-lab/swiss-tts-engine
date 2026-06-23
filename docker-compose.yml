@@ -22,6 +22,7 @@ services:
     environment:
       - REACT_NATIVE_PACKAGER_HOSTNAME=${HOST_IP}
       - EXPO_PUBLIC_API_IP=${HOST_IP}
+      - NODE_OPTIONS=--no-warnings --experimental-specifier-resolution=node
     volumes:
       - .:/app
       - /app/node_modules

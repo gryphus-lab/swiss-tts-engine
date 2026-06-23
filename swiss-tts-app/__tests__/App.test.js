@@ -238,7 +238,7 @@ describe("generateAndPlayAudio – success path", () => {
 
   it("includes a cache-busting timestamp in the audio URL", async () => {
     const fixedTime = 1700000000000;
-    jest.spyOn(Date.prototype, "getTime").mockReturnValue(fixedTime);
+    jest.spyOn(Date, "now").mockReturnValue(fixedTime);
 
     const { getByText } = render(<App />);
 
@@ -732,5 +732,145 @@ describe("generateAndPlayAudio – boundary and regression cases", () => {
     });
 
     expect(Alert.alert).toHaveBeenCalledTimes(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Additional coverage tests
+// ---------------------------------------------------------------------------
+
+describe("Additional App coverage", () => {
+  it("shows ActivityIndicator while a request is pending", async () => {
+    let resolveFetch;
+
+    global.fetch = jest.fn().mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveFetch = resolve;
+        }),
+    );
+
+    const { getByText, queryByText } = render(<App />);
+
+    await act(async () => {
+      fireEvent.press(getByText("Speak Dialect"));
+    });
+
+    // Button should disappear while loading
+    expect(queryByText("Speak Dialect")).toBeFalsy();
+
+    await act(async () => {
+      resolveFetch(
+        makeFetchResponse({
+          ok: true,
+          status: 200,
+          json: { audio_url: "/audio/loading.wav" },
+        }),
+      );
+    });
+
+    await waitFor(() => {
+      expect(getByText("Speak Dialect")).toBeTruthy();
+    });
+  });
+
+  it("cleans up previous sound before attempting a second playback", async () => {
+    const oldSound = {
+      unloadAsync: jest.fn().mockResolvedValue(undefined),
+    };
+
+    mockCreateAsync
+      .mockResolvedValueOnce({ sound: oldSound })
+      .mockRejectedValueOnce(new Error("audio failed"));
+
+    const { getByText } = render(<App />);
+
+    // First synthesis
+    await act(async () => {
+      fireEvent.press(getByText("Speak Dialect"));
+    });
+
+    // Second synthesis
+    await act(async () => {
+      fireEvent.press(getByText("Speak Dialect"));
+    });
+
+    expect(oldSound.unloadAsync).toHaveBeenCalled();
+
+    expect(Alert.alert).toHaveBeenCalledWith(
+      "Error",
+      "Failed to load or play the audio file. Please check your connection and try again.",
+    );
+  });
+
+  it("handles API response without audio_url", async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: jest.fn().mockResolvedValue({}),
+    });
+
+    const { getByText } = render(<App />);
+
+    await act(async () => {
+      fireEvent.press(getByText("Speak Dialect"));
+    });
+
+    expect(mockCreateAsync).toHaveBeenCalledWith(
+      expect.objectContaining({
+        uri: expect.stringContaining("undefined"),
+      }),
+      {
+        shouldPlay: true,
+      },
+    );
+  });
+
+  it("handles HTTP status 0 failures", async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      makeFetchResponse({
+        ok: false,
+        status: 0,
+        json: {},
+      }),
+    );
+
+    const { getByText } = render(<App />);
+
+    await act(async () => {
+      fireEvent.press(getByText("Speak Dialect"));
+    });
+
+    expect(Alert.alert).toHaveBeenCalledWith(
+      "Error",
+      "HTTP error (0). Please try again.",
+    );
+  });
+
+  it("supports large text input payloads", async () => {
+    const longText = "Swiss German translation test ".repeat(100);
+
+    const { getByDisplayValue, getByText } = render(<App />);
+
+    fireEvent.changeText(
+      getByDisplayValue("Guten Tag, mein Name ist Abhay Singh."),
+      longText,
+    );
+
+    expect(getByDisplayValue(longText)).toBeTruthy();
+
+    await act(async () => {
+      fireEvent.press(getByText("Speak Dialect"));
+    });
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        body: JSON.stringify({
+          text: longText,
+          dialect: "zurich",
+        }),
+      }),
+    );
   });
 });

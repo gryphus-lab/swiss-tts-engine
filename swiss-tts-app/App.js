@@ -79,7 +79,7 @@ export default function App() {
           "EXPO_PUBLIC_API_IP environment variable is not defined. Please configure it in your .env file.",
         );
       }
-      const audioUrl = `http://${process.env.EXPO_PUBLIC_API_IP}:8000${data.audio_url}?t=${new Date().getTime()}`;
+      const audioUrl = `http://${process.env.EXPO_PUBLIC_API_IP}:8000${data.audio_url}?t=${Date.now()}`;
 
       // Unload previous sound if it exists
       if (sound) {

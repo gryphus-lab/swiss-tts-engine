@@ -224,16 +224,23 @@ describe("generateAndPlayAudio – success path", () => {
       fireEvent.press(getByText("Speak Dialect"));
     });
 
-    expect(mockCreateAsync).toHaveBeenCalledWith(
-      {
+    await waitFor(() => {
+      expect(mockCreateAsync).toHaveBeenCalled();
+    });
+
+    const [audioConfig, options] = mockCreateAsync.mock.calls[0];
+
+    expect(audioConfig).toEqual(
+      expect.objectContaining({
         uri: expect.stringMatching(
-          new RegExp(
-            String.raw`^http://${MOCK_API_IP}:8000/audio/test\\.wav\\?t=\\d+$`,
-          ),
+          new RegExp(`^http://${MOCK_API_IP}:8000/audio/test\\.wav\\?t=\\d+$`), //NOSONAR
         ),
-      },
-      { shouldPlay: true },
+      }),
     );
+
+    expect(options).toEqual({
+      shouldPlay: true,
+    });
   });
 
   it("includes a cache-busting timestamp in the audio URL", async () => {

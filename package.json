@@ -1,24 +1,21 @@
 {
-  "name": "swiss-tts-app",
+  "name": "swiss-tts-engine",
   "version": "1.0.0",
-  "main": "index.js",
+  "scripts": {
+    "start": "expo start --config ./swiss-tts-app/app.json",
+    "android": "expo start --android --config ./swiss-tts-app/app.json",
+    "format": "prettier --write ."
+  },
   "dependencies": {
     "@react-native-picker/picker": "2.11.1",
-    "expo": "~56.0.12",
-    "expo-av": "^16.0.8",
-    "expo-status-bar": "~3.0.9",
+    "expo": "~54.0.0",
+    "expo-av": "~14.0.5",
+    "expo-status-bar": "~1.12.1",
     "react": "19.1.0",
     "react-native": "0.81.5"
   },
-  "scripts": {
-    "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web",
-    "test": "jest"
-  },
-  "private": true,
   "devDependencies": {
+    "prettier": "^3.0.0",
     "@testing-library/jest-native": "^5.4.3",
     "@testing-library/react-native": "^12.4.3",
     "@types/react": "~19.1.10",
@@ -35,5 +32,6 @@
     "transformIgnorePatterns": [
       "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg|@react-native-picker)"
     ]
-  }
+  },
+  "private": true
 }

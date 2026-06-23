@@ -1,6 +1,7 @@
 [tools]
 python = "3.12"
 uv = 'latest'
+prettier = 'latest'
 
 # Automatic virtual environment
 [env]
@@ -24,7 +25,7 @@ echo "Virtual env: $VIRTUAL_ENV"
 # Dependency management
 [tasks.setup]
 description = "Install dependencies and create the local virtual environment"
-run = "uv sync && cd swiss-tts-app && npm install"
+run = ["uv sync", "npm install"]
 
 [tasks.add]
 description = "Add a new dependency to the project"
@@ -48,8 +49,11 @@ description = "Run linting and tests"
 run = "uv run ruff check . && uv run pytest"
 
 [tasks.test]
-description = "Run the test suite"
-run = "uv run pytest --cov=src --cov-report=xml:coverage.xml"
+description = "Run the test suites"
+run = [
+  "uv run pytest --cov=src --cov-report=xml:coverage.xml",
+  "cd swiss-tts-app && npm run test",
+]
 
 # Application tasks
 [tasks.generate]
@@ -68,3 +72,7 @@ run = "docker build --no-cache -t swiss-tts-engine:latest . -f Dockerfile"
 [tasks.docker-compose]
 description = "Run the application using Docker Compose"
 run = "docker-compose up -d"
+
+[tasks.docker-app-logs]
+description = "Print the mobile app docker logs"
+run = "docker compose logs -f swiss-tts-app"

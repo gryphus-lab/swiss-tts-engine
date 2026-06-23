@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------------
 // Environment variable - MUST be set before importing App
 // ---------------------------------------------------------------------------
-const MOCK_API_IP = '192.168.1.100';
+const MOCK_API_IP = '192.168.1.100'; //NOSONAR
 
 // Set environment variable before any imports
 process.env.EXPO_PUBLIC_API_IP = MOCK_API_IP;

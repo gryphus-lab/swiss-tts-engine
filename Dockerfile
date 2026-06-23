@@ -1,7 +1,13 @@
-# Use the official Python 3.12 slim image
-FROM python:3.12-slim
+# ==========================================
+# STAGE 1: Swiss TTS Backend Engine
+# ==========================================
+FROM python:3.12-slim AS backend
 
-# Install system dependencies required for audio processing and native builds
+WORKDIR /app
+
+
+
+# Install system dependencies required for compilation
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     curl \
@@ -9,21 +15,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Grab the ultra-fast uv executable from Astral's official image
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
-
-# Set the working directory inside the container
-WORKDIR /app
-
-# Copy dependency definitions and lock file FIRST (maximize layer cache)
+# Copy the uv binary straight from the official Astral image
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+# Copy python configuration files
 COPY pyproject.toml uv.lock README.md ./
-COPY src/ ./src/
-
+COPY src/ ./src
 # Create a virtual environment and install dependencies via uv (frozen lock)
 RUN uv venv && uv sync --frozen
 
-# Copy public directory after dependencies are installed (changes won't invalidate dep cache)
-COPY public/ ./public/
+# Copy backend source code and static web UI files
+COPY public/ ./public
 
 # Put the virtual environment on the system PATH
 ENV PATH="/app/.venv/bin:$PATH" \
@@ -34,5 +35,23 @@ ENV PATH="/app/.venv/bin:$PATH" \
 HEALTHCHECK --interval=10s --timeout=5s --start-period=45s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Set the default command to run the FastAPI server
-CMD ["uvicorn", "swiss_tts.api:app", "--host", "0.0.0.0", "--port", "8000"]
+EXPOSE 8000
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+# ==========================================
+# STAGE 2: Expo Mobile Frontend
+# ==========================================
+FROM node:25-alpine AS frontend
+
+WORKDIR /app
+RUN apk add --no-cache bash
+
+# Copy package configurations relative to the root context
+COPY swiss-tts-app/package*.json ./
+RUN npm install --ignore-scripts
+
+# Copy the rest of the mobile application source code
+COPY swiss-tts-app/ .
+
+EXPOSE 8081
+CMD ["npx", "expo", "start", "--lan", "-c", "--config", "./swiss-tts-app/app.json"]

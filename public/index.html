@@ -279,7 +279,7 @@ Hello, how are you today?</textarea
           resultArea.style.display = "block";
           status.textContent = "Success!";
           status.style.color = "";
-          audioPlayer.play();
+          await audioPlayer.play();
         } catch (err) {
           status.textContent = "Error: " + err.message;
           status.style.color = "#e11d48";

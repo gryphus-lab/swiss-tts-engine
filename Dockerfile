@@ -1,35 +1,51 @@
 # ==========================================
-# STAGE 1: Swiss TTS Backend Engine
+# STAGE 1: Builder - Swiss TTS Backend Engine
+# ==========================================
+FROM python:3.12-slim AS builder
+
+WORKDIR /app
+
+# Install build dependencies (only needed during compilation)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libsndfile1-dev \
+    python3-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy the uv binary
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+# Copy dependency files and README (hatchling requires README)
+COPY pyproject.toml uv.lock README.md ./
+
+# Create virtual environment and install dependencies
+RUN uv venv && uv sync --frozen
+
+# ==========================================
+# STAGE 2: Runtime - Swiss TTS Backend Engine
 # ==========================================
 FROM python:3.12-slim AS backend
 
 WORKDIR /app
 
-
-
-# Install system dependencies required for compilation
+# Install only runtime dependencies (libsndfile1, no build tools)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
     curl \
     libsndfile1 \
-    python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy the uv binary straight from the official Astral image
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
-# Copy python configuration files
-COPY pyproject.toml uv.lock README.md ./
-COPY src/ ./src
-# Create a virtual environment and install dependencies via uv (frozen lock)
-RUN uv venv && uv sync --frozen
+# Copy virtual environment from builder
+COPY --from=builder /app/.venv /app/.venv
 
-# Copy backend source code and static web UI files
+# Copy source code and configuration files
+COPY src/ ./src
 COPY public/ ./public
 
-# Put the virtual environment on the system PATH
+# Set environment variables
 ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONHASHSEED=random
 
 # Create non-root user and set permissions
 RUN useradd -m -u 1000 appuser && \
@@ -45,9 +61,9 @@ EXPOSE 8000
 CMD ["uvicorn", "src.swiss_tts.api:app", "--host", "0.0.0.0", "--port", "8000"]
 
 # ==========================================
-# STAGE 2: Expo Mobile Frontend
+# STAGE 3: Expo Mobile Frontend
 # ==========================================
-FROM node:25-alpine AS frontend
+FROM node:20-alpine AS frontend
 
 WORKDIR /app
 RUN apk add --no-cache bash
@@ -59,11 +75,10 @@ RUN npm install --ignore-scripts
 # Copy the rest of the mobile application source code
 COPY swiss-tts-app/ .
 
-# Create non-root user and set permissions
-RUN adduser -D -u 1000 appuser && \
-    chown -R appuser:appuser /app
+# User already exists in node:alpine as 'node', just set permissions
+RUN chown -R node:node /app
 
-USER appuser
+USER node
 
 EXPOSE 8081
 CMD ["npx", "expo", "start", "--lan", "-c", "--config", "./app.json"]

@@ -23,7 +23,7 @@ services:
       - REACT_NATIVE_PACKAGER_HOSTNAME=${HOST_IP}
       - EXPO_PUBLIC_API_IP=${HOST_IP}
     volumes:
-      - .:/app 
+      - .:/app
       - /app/node_modules
     depends_on:
       - swiss-tts-api

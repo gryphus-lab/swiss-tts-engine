@@ -37,12 +37,12 @@ run = "uv sync --upgrade"
 
 # Code quality
 [tasks.lint]
-description = "Run Ruff linting checks"
-run = "uv run ruff check ."
+description = "Run linting checks with Prettier and Ruff"
+run = ["npm run lint", "uv run ruff check ."]
 
 [tasks.format]
-description = "Format code with Ruff"
-run = "uv run ruff format ."
+description = "Format code with Prettier and Ruff"
+run = ["npm run format", "uv run ruff format ."]
 
 [tasks.check]
 description = "Run linting and tests"

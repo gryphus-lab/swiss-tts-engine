@@ -6,9 +6,6 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = []
 
-[tool.uv.workspace]
-members = ["apps/swiss-tts-engine"]
-
 [dependency-groups]
 dev = [
     "pytest>=8.0",
@@ -21,5 +18,10 @@ exclude = [
     ".venv",
     "node_modules",
     "build",
-    "uv.lock"
+    "uv.lock",
+]
+
+[tool.uv.workspace]
+members = [
+    "apps/swiss-tts-engine",
 ]

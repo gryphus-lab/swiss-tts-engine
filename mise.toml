@@ -51,8 +51,8 @@ run = "uv run ruff check . && uv run --package swiss-tts-engine pytest apps/swis
 [tasks.test]
 description = "Run the test suites"
 run = [
-    "uv run --package swiss-tts-engine pytest apps/swiss-tts-engine/tests --cov=swiss_tts --cov-report=xml:coverage.xml",
-    "npm run test --prefix apps/swiss-tts-app",
+  "uv run --package swiss-tts-engine pytest apps/swiss-tts-engine/tests --cov=swiss_tts --cov-report=xml:coverage.xml",
+  "npm run test --prefix apps/swiss-tts-app",
 ]
 
 # Application tasks

@@ -22,9 +22,7 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": [
-      "expo-asset"
-    ],
+    "plugins": ["expo-asset"],
     "extra": {
       "eas": {
         "projectId": "7f5ff604-ea81-479c-bad9-852ab6d5a120"

@@ -1,4 +1,3 @@
-# src/swiss_tts/main.py
 import os
 import re
 import warnings

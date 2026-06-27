@@ -13,6 +13,12 @@ resolution-markers = [
     "python_full_version < '3.13' and sys_platform != 'emscripten' and sys_platform != 'win32'",
 ]
 
+[manifest]
+members = [
+    "swiss-tts-engine",
+    "swiss-tts-monorepo",
+]
+
 [[package]]
 name = "annotated-doc"
 version = "0.0.4"
@@ -2290,17 +2296,14 @@ wheels = [
 [[package]]
 name = "swiss-tts-engine"
 version = "1.0.0"
-source = { editable = "." }
+source = { editable = "apps/swiss-tts-engine" }
 dependencies = [
     { name = "espnet" },
     { name = "espnet-model-zoo" },
     { name = "fastapi" },
     { name = "numpy" },
     { name = "openai" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
     { name = "python-dotenv" },
-    { name = "ruff" },
     { name = "soundfile" },
     { name = "torch" },
     { name = "torchaudio" },
@@ -2314,14 +2317,32 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.110.0" },
     { name = "numpy", specifier = ">=1.26.0" },
     { name = "openai", specifier = ">=1.14.0" },
-    { name = "pytest", specifier = ">=8.0" },
-    { name = "pytest-cov", specifier = ">=4.0" },
     { name = "python-dotenv", specifier = ">=1.0.1" },
-    { name = "ruff", specifier = ">=0.15.18" },
     { name = "soundfile", specifier = ">=0.12.1" },
     { name = "torch", specifier = ">=2.2.0" },
     { name = "torchaudio", specifier = ">=2.11.0" },
     { name = "uvicorn", specifier = ">=0.29.0" },
+]
+
+[[package]]
+name = "swiss-tts-monorepo"
+version = "1.0.0"
+source = { virtual = "." }
+
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "ruff" },
+]
+
+[package.metadata]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pytest", specifier = ">=8.0" },
+    { name = "pytest-cov", specifier = ">=4.0" },
+    { name = "ruff", specifier = ">=0.15.18" },
 ]
 
 [[package]]

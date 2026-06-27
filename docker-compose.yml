@@ -55,8 +55,8 @@ services:
       - EXPO_PUBLIC_API_IP=${HOST_IP}
       - NODE_OPTIONS=--no-warnings
     volumes:
-      - .:/app
-      - /app/node_modules
+      - ./apps/swiss-tts-app:/app/apps/swiss-tts-app
+      - /app/apps/swiss-tts-app/node_modules
     depends_on:
       - swiss-tts-api
 

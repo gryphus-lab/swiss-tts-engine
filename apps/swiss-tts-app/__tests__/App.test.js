@@ -424,21 +424,24 @@ describe("generateAndPlayAudio – audio playback error", () => {
 
 describe("generateAndPlayAudio – network errors", () => {
   it("shows a generic error if the API IP disappears before audio playback", async () => {
-    delete process.env.EXPO_PUBLIC_API_IP;
+    const previousApiIp = process.env.EXPO_PUBLIC_API_IP;
+    try {
+      delete process.env.EXPO_PUBLIC_API_IP;
 
-    const { getByText } = render(<App />);
+      const { getByText } = render(<App />);
 
-    await act(async () => {
-      fireEvent.press(getByText("Speak Dialect"));
-    });
+      await act(async () => {
+        fireEvent.press(getByText("Speak Dialect"));
+      });
 
-    expect(Alert.alert).toHaveBeenCalledWith(
-      "Error",
-      "An unexpected error occurred.",
-    );
-    expect(mockCreateAsync).not.toHaveBeenCalled();
-
-    process.env.EXPO_PUBLIC_API_IP = MOCK_API_IP;
+      expect(Alert.alert).toHaveBeenCalledWith(
+        "Error",
+        "An unexpected error occurred.",
+      );
+      expect(mockCreateAsync).not.toHaveBeenCalled();
+    } finally {
+      process.env.EXPO_PUBLIC_API_IP = previousApiIp;
+    }
   });
 
   it('shows network error message when fetch throws "Network request failed"', async () => {

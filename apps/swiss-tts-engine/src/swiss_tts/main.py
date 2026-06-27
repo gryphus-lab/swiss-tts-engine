@@ -4,10 +4,11 @@ import warnings
 import numpy as np
 import soundfile as sf
 import torch
-from espnet_model_zoo.downloader import ModelDownloader
-from espnet2.bin.tts_inference import Text2Speech
 from swiss_tts import config
 from swiss_tts.translator import DialectTranslator
+
+ModelDownloader = None
+Text2Speech = None
 
 # Suppress Python syntax/deprecation warnings from third-party libraries
 warnings.filterwarnings("ignore", category=SyntaxWarning)
@@ -16,6 +17,32 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 # Suppress internal PyTorch or framework logs if desired
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
+
+def _ensure_scipy_signal_compat() -> None:
+    """Patch APIs expected by older ESPnet releases but moved in newer SciPy."""
+    try:
+        import scipy.signal as scipy_signal
+        from scipy.signal.windows import kaiser
+    except ImportError:
+        return
+
+    if not hasattr(scipy_signal, "kaiser"):
+        scipy_signal.kaiser = kaiser
+
+
+def _load_espnet_dependencies() -> tuple[type, type]:
+    global ModelDownloader, Text2Speech
+
+    if ModelDownloader is None or Text2Speech is None:
+        _ensure_scipy_signal_compat()
+        from espnet_model_zoo.downloader import ModelDownloader as EspnetModelDownloader
+        from espnet2.bin.tts_inference import Text2Speech as EspnetText2Speech
+
+        ModelDownloader = EspnetModelDownloader
+        Text2Speech = EspnetText2Speech
+
+    return ModelDownloader, Text2Speech
 
 
 class SwissTTSEngine:
@@ -28,11 +55,12 @@ class SwissTTSEngine:
         Parameters:
             model_name (str): Name of the ESPnet model to download and configure.
         """
+        model_downloader_cls, text2speech_cls = _load_espnet_dependencies()
         print(f"Initializing ESPnet Speech Engine using model: {model_name}...")
-        self.downloader = ModelDownloader()
+        self.downloader = model_downloader_cls()
         self.model_config = self.downloader.download_and_unpack(model_name)
 
-        self.text2speech = Text2Speech(
+        self.text2speech = text2speech_cls(
             train_config=self.model_config["train_config"],
             model_file=self.model_config["model_file"],
             device="cpu",

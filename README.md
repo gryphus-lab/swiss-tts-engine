@@ -18,7 +18,6 @@ Monorepo for a Swiss German text-to-speech system.
 │       ├── app.json
 │       ├── package.json
 │       └── README/docs files
-├── components/
 ├── pyproject.toml
 ├── uv.lock
 └── mise.toml

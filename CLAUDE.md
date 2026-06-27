@@ -6,8 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A monorepo for a multi-dialect Swiss German Text-to-Speech system, split into two halves:
 
-- **Python backend** (`src/swiss_tts/`) — an ESPnet-based TTS engine plus a FastAPI REST service. Managed by `uv` / `mise`.
-- **Expo / React Native mobile app** (`swiss-tts-app/`, root `App.js`) — a thin client that POSTs text to the backend and plays back the returned `.wav`. Managed by `npm`.
+- **Python backend** (`apps/swiss-tts-engine/src/swiss_tts/`) — an ESPnet-based TTS engine plus a FastAPI REST service. Managed by `uv` / `mise`.
+- **Expo / React Native mobile app** (`apps/swiss-tts-app/`) — a thin client that POSTs text to the backend and plays back the returned `.wav`. Managed by `npm`.
 
 The two are wired together at runtime over HTTP, and together in `docker-compose.yml` for local end-to-end dev.
 
@@ -27,26 +27,26 @@ mise run check            # ruff check + pytest (no JS)
 ### Backend (Python)
 
 ```bash
-uv run pytest                                              # all Python tests
-uv run pytest tests/test_api.py                           # one file
-uv run pytest tests/test_api.py::test_health_check        # one test
-uv run pytest --cov=src --cov-report=xml:coverage.xml     # with coverage (matches CI/Sonar)
+uv run pytest                                                        # all Python tests
+uv run pytest tests/test_api.py                                     # one file
+uv run pytest tests/test_api.py::test_health_check                  # one test
+uv run pytest --cov=swiss_tts --cov-report=xml:coverage.xml         # with coverage (matches CI/Sonar)
 uv run ruff check . && uv run ruff format .
-uv run python -m src.swiss_tts.main                       # run the translate→synthesize CLI pipeline
-uv run uvicorn src.swiss_tts.api:app --reload --port 8000 # run the REST API
+uv run python -m swiss_tts.main                                     # run the translate→synthesize CLI pipeline
+uv run uvicorn swiss_tts.api:app --reload --port 8000               # run the REST API
 ```
 
-Tests import the package as `swiss_tts` (not `src.swiss_tts`), which works because `uv sync` installs it editable per `pyproject.toml` (`tool.hatch.build` → `src/swiss_tts`). Run `uv sync` before testing if imports fail.
+Tests import the package as `swiss_tts`, which works because `uv sync` installs it editable per `pyproject.toml` (`tool.hatch.build` → `src/swiss_tts`). Run `uv sync` before testing if imports fail.
 
 ### Frontend (Expo)
 
 ```bash
 npm test                  # jest --coverage (jest-expo preset)
 npm run lint              # prettier --check .  (this is the "lint" — there is no ESLint)
-npm start                 # expo start --config ./swiss-tts-app/app.json
+npm start --prefix apps/swiss-tts-app  # expo start
 ```
 
-Frontend tests live in `swiss-tts-app/__tests__/`.
+Frontend tests live in `apps/swiss-tts-app/__tests__/`.
 
 ### Full-stack via Docker
 
@@ -75,13 +75,13 @@ Key endpoints: `GET /health`, `POST /api/v1/synthesize` (`{text, dialect}` → t
 
 ### Frontend
 
-`swiss-tts-app/App.js` (re-exported by root `App.js` so the root acts as the Expo entry) is a single-screen component: text box + dialect Picker + a button that POSTs to `${EXPO_PUBLIC_API_IP}:8000/api/v1/synthesize` and plays the WAV via `expo-av`. **`EXPO_PUBLIC_API_IP` is required** — the app throws at module load if it's unset. Audio URLs get a `?t=Date.now()` cache-buster.
+`apps/swiss-tts-app/App.js` is a single-screen component: text box + dialect Picker + a button that POSTs to `${EXPO_PUBLIC_API_IP}:8000/api/v1/synthesize` and plays the WAV via `expo-av`. **`EXPO_PUBLIC_API_IP` is required** — the app throws at module load if it's unset. Audio URLs get a `?t=Date.now()` cache-buster.
 
 `metro.config.js` sets `unstable_enablePackageExports = false` (needed for Node 20+ compatibility) — don't remove it.
 
 ## Conventions & gotchas
 
-- **`swiss-tts-app/AGENTS.md` (loaded via its `CLAUDE.md`) instructs: read the versioned Expo docs at the pinned version before writing Expo/React Native code.** This project tracks Expo SDK 54 (`package.json`). Honor that — Expo APIs change between SDK versions.
-- Two test ecosystems, two coverage reports: `coverage.xml` (Python, consumed by SonarQube) and `coverage/` (jest). Sonar scans `src` + `swiss-tts-app` and excludes `metro.config.js` and `**/__tests__/*.js`.
+- **`apps/swiss-tts-app/AGENTS.md` (loaded via its `CLAUDE.md`) instructs: read the versioned Expo docs at the pinned version before writing Expo/React Native code.** This project tracks Expo SDK 54 (`package.json`). Honor that — Expo APIs change between SDK versions.
+- Two test ecosystems, two coverage reports: `coverage.xml` (Python, consumed by SonarQube) and `coverage/` (jest). Sonar scans `apps/swiss-tts-engine/src` + `apps/swiss-tts-app` and excludes `metro.config.js` and `**/__tests__/*.js`.
 - CI (`.github/workflows/ci.yml`) runs `mise run setup` then `mise run test` then a SonarQube scan (skips gracefully without `SONAR_TOKEN`). A separate `trivy.yml` builds the Docker image and scans it.
 - In Docker, the backend reaches Ollama on the host via `OLLAMA_URL=http://host.docker.internal:11434/v1`; the ESPnet model cache is persisted in the `espnet_model_cache` volume to avoid re-downloading ~700MB on restart.

@@ -25,7 +25,7 @@ echo "Virtual env: $VIRTUAL_ENV"
 # Dependency management
 [tasks.setup]
 description = "Install dependencies and create the local virtual environment"
-run = ["uv sync", "npm install"]
+run = ["uv sync --all-packages", "npm install --prefix apps/swiss-tts-app"]
 
 [tasks.add]
 description = "Add a new dependency to the project"
@@ -38,24 +38,27 @@ run = "uv sync --upgrade"
 # Code quality
 [tasks.lint]
 description = "Run linting checks with Prettier and Ruff"
-run = ["npm run lint", "uv run ruff check ."]
+run = ["npm run lint --prefix apps/swiss-tts-app", "uv run ruff check ."]
 
 [tasks.format]
 description = "Format code with Prettier and Ruff"
-run = ["npm run format", "uv run ruff format ."]
+run = ["npm run format --prefix apps/swiss-tts-app", "uv run ruff format ."]
 
 [tasks.check]
 description = "Run linting and tests"
-run = "uv run ruff check . && uv run pytest"
+run = "uv run ruff check . && uv run --package swiss-tts-engine pytest apps/swiss-tts-engine/tests"
 
 [tasks.test]
 description = "Run the test suites"
-run = ["uv run pytest --cov=src --cov-report=xml:coverage.xml", "npm run test"]
+run = [
+    "uv run --package swiss-tts-engine pytest apps/swiss-tts-engine/tests --cov=swiss_tts --cov-report=xml:coverage.xml",
+    "npm run test --prefix apps/swiss-tts-app",
+]
 
 # Application tasks
 [tasks.generate]
 description = "Generate Swiss German speech audio"
-run = "uv run python -m src.swiss_tts.main"
+run = "uv run --package swiss-tts-engine python -m swiss_tts.main"
 alias = "gen"
 
 [tasks.docker-build]

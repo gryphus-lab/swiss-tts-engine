@@ -1,4 +1,3 @@
-# src/swiss_tts/config.py
 from pathlib import Path
 import json
 
@@ -87,8 +86,8 @@ def _load_texts_from_json():
         dict or None: A mapping of dialect names to text strings, or None if
             no configuration file is found.
     """
-    repo_root = Path(__file__).resolve().parents[2]
-    candidates = [repo_root / "texts.json", repo_root / "config" / "texts.json"]
+    app_root = Path(__file__).resolve().parents[2]
+    candidates = [app_root / "texts.json", app_root / "config" / "texts.json"]
 
     for path in candidates:
         raw = _read_json_file(path)

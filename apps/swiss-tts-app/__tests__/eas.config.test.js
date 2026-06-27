@@ -5,7 +5,7 @@
  * to configure how the app is built for different environments.
  */
 
-const easConfig = require("../../eas.json");
+const easConfig = require("../eas.json");
 
 describe("eas.json configuration", () => {
   describe("top-level structure", () => {

@@ -7,7 +7,7 @@
 # external commands (uname, ipconfig, ip, hostname, mise) with stubs.
 #
 # Usage (from repo root):
-#   bash tests/dev_sh_test.sh
+#   bash apps/swiss-tts-engine/tests/dev_sh_test.sh
 # ---------------------------------------------------------------------------
 
 set -euo pipefail
@@ -16,8 +16,8 @@ PASS=0
 FAIL=0
 TOTAL=0
 
-# Path to dev.sh relative to the repo root (this script lives in tests/)
-DEV_SH="$(cd "$(dirname "$0")/.." && pwd)/dev.sh"
+# Path to dev.sh relative to the repo root (this script lives in apps/swiss-tts-engine/tests/)
+DEV_SH="$(cd "$(dirname "$0")/../../.." && pwd)/dev.sh"
 
 # ---------------------------------------------------------------------------
 # Helpers

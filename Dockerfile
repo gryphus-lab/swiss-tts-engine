@@ -15,14 +15,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy the uv binary
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-# Copy dependency files and README (hatchling requires README)
+# Copy dependency files and README files (hatchling requires package README)
 COPY pyproject.toml uv.lock README.md ./
+COPY apps/swiss-tts-engine/pyproject.toml apps/swiss-tts-engine/README.md ./apps/swiss-tts-engine/
 
 # Copy source code (needed for editable install)
-COPY src/ ./src
+COPY apps/swiss-tts-engine/src/ ./apps/swiss-tts-engine/src
 
 # Create virtual environment and install dependencies
-RUN uv venv && uv sync --frozen
+RUN uv venv && uv sync --frozen --package swiss-tts-engine
 
 # ==========================================
 # STAGE 2: Runtime - Swiss TTS Backend Engine
@@ -41,12 +42,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=builder /app/.venv /app/.venv
 
 # Copy source code and static web UI files (for package imports and public assets)
-COPY src/ ./src
-COPY public/ ./public
+COPY apps/swiss-tts-engine/src/ ./apps/swiss-tts-engine/src
+COPY apps/swiss-tts-engine/public/ ./apps/swiss-tts-engine/public
 
 # Set environment variables
 ENV PATH="/app/.venv/bin:$PATH" \
-    PYTHONPATH="/app/src:$PYTHONPATH" \
+    PYTHONPATH="/app/apps/swiss-tts-engine/src:$PYTHONPATH" \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONHASHSEED=random
@@ -56,7 +57,7 @@ HEALTHCHECK --interval=10s --timeout=5s --start-period=45s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
 EXPOSE 8000
-CMD ["uvicorn", "src.swiss_tts.api:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "swiss_tts.api:app", "--host", "0.0.0.0", "--port", "8000"]
 
 # ==========================================
 # STAGE 3: Expo Mobile Frontend
@@ -64,14 +65,14 @@ CMD ["uvicorn", "src.swiss_tts.api:app", "--host", "0.0.0.0", "--port", "8000"]
 FROM node:20-alpine AS frontend
 
 # Move into the app folder so expo finds app.json automatically
-WORKDIR /app
+WORKDIR /app/apps/swiss-tts-app
 
 # Copy only the package files first to leverage Docker cache
-COPY package*.json ./
+COPY apps/swiss-tts-app/package*.json ./
 RUN npm ci --ignore-scripts
 
-# Copy the rest of the project
-COPY . .
+# Copy the rest of the mobile app
+COPY apps/swiss-tts-app/ ./
 
 EXPOSE 8081
 CMD ["./node_modules/.bin/expo", "start", "--lan", "-c"]

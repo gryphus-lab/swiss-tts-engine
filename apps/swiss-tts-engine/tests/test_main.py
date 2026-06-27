@@ -363,7 +363,7 @@ def test_main_module_executes_as_script(monkeypatch, tmp_path):
         sf_module = types.SimpleNamespace(write=lambda *args, **kwargs: None)
         sys.modules["soundfile"] = sf_module
 
-        runpy.run_module("src.swiss_tts.main", run_name="__main__")
+        runpy.run_module("swiss_tts.main", run_name="__main__")
     finally:
         sys.modules.clear()
         sys.modules.update(sys_modules_backup)

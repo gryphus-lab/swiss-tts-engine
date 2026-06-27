@@ -1,4 +1,3 @@
-# src/swiss_tts/translator.py
 import logging
 import os
 

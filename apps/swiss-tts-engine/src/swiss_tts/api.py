@@ -1,4 +1,3 @@
-# src/swiss_tts/api.py
 import logging
 import os
 import threading

@@ -9,7 +9,7 @@ java = '21'
 _.python.venv = { path = ".venv", create = true }
 PROJECT_NAME = "{{ config_root | basename }}"
 VIRTUAL_ENV = "{{ config_root }}/.venv"
-JAVA_HOME = "/Users/abhaysingh/.local/share/mise/installs/java/21"
+JAVA_HOME = "{{ mise_data_dir }}/installs/java/21"
 ANDROID_HOME = "{{ env.HOME }}/Library/Android/sdk"
 ANDROID_SDK_ROOT = "{{ env.HOME }}/Library/Android/sdk"
 ANDROID_NDK_HOME = "{{ env.HOME }}/Library/Android/sdk/ndk/27.1.12297006"

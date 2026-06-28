@@ -12,51 +12,55 @@ import {
 import { Picker } from "@react-native-picker/picker";
 import { Audio } from "expo-av";
 import { StatusBar } from "expo-status-bar";
-import { initLlama } from 'llama.rn';
-import * as FileSystem from 'expo-file-system'; // Make sure expo-file-system is installed
+import { initLlama } from "llama.rn";
+import * as FileSystem from "expo-file-system"; // Make sure expo-file-system is installed
+
+const API_IP = process.env.EXPO_PUBLIC_API_IP;
+if (!API_IP) {
+  throw new Error(
+    "EXPO_PUBLIC_API_IP environment variable is not defined. Please configure it in your .env file.",
+  );
+}
 
 export default function App() {
   const [text, setText] = useState("Guten Tag, mein Name ist Abhay Singh.");
   const [dialect, setDialect] = useState("zurich");
   const [loading, setLoading] = useState(false);
   const [sound, setSound] = useState(null);
-
-  const API_IP = process.env.EXPO_PUBLIC_API_IP;
+  const [llamaContext, setLlamaContext] = useState(null);
+  const [isModelLoading, setIsModelLoading] = useState(false);
+  const [statusMessage, setStatusMessage] = useState("");
 
   useEffect(() => {
-        async function loadLocalModel() {
+    async function loadLocalModel() {
       try {
-        setStatusMessage('Mounting safe sandbox allocation...');
-        
+        setStatusMessage("Mounting safe sandbox allocation...");
+
         // Dynamically resolves to the secure, internal app directory on Android 17
         const modelPath = `${FileSystem.documentDirectory}gemma-4-E4B-it-Q4_K_M.gguf`;
 
         const context = await initLlama({
           model: modelPath,
-          use_mlock: true,      // Tells the kernel to pin the memory space
-          n_ctx: 1024,          
-          n_gpu_layers: 99,     // Offload layers to your Pixel 10 Tensor NPU
+          use_mlock: true, // Tells the kernel to pin the memory space
+          n_ctx: 1024,
+          n_gpu_layers: 99, // Offload layers to your Pixel 10 Tensor NPU
         });
 
         setLlamaContext(context);
         setIsModelLoading(false);
-        setStatusMessage('Tensor engine ready. Model loaded fully on-device.');
+        setStatusMessage("Tensor engine ready. Model loaded fully on-device.");
       } catch (error) {
         console.error("Local inference initiation failed:", error);
         setStatusMessage(`Engine crash: ${error.message}`);
       }
     }
-    if (!API_IP) {
-      throw new Error(
-        "EXPO_PUBLIC_API_IP environment variable is not defined. Please configure it in your .env file.",
-      );
-    }
+    loadLocalModel();
     return () => {
       if (sound) {
         sound.unloadAsync();
       }
     };
-  }, [sound, API_IP]);
+  }, [sound]);
 
   async function generateAndPlayAudio() {
     if (!text.trim()) {
@@ -89,7 +93,10 @@ export default function App() {
             `Request error (${response.status}). Please check your input and try again.`,
           );
         } else {
-          Alert.alert("Error", `HTTP error (${response.status}). Please try again.`);
+          Alert.alert(
+            "Error",
+            `HTTP error (${response.status}). Please try again.`,
+          );
         }
         setLoading(false);
         return;
@@ -104,13 +111,15 @@ export default function App() {
       );
       setSound(newSound);
     } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       if (error instanceof SyntaxError) {
         Alert.alert(
           "Error",
           "Server returned an invalid response. Please try again.",
         );
       } else if (
-        error.message === "Network request failed" ||
+        errorMessage === "Network request failed" ||
         error instanceof TypeError
       ) {
         Alert.alert(
@@ -118,8 +127,8 @@ export default function App() {
           "Network connection failed. Ensure Docker is running and your API IP is configured correctly.",
         );
       } else if (
-        error.message.includes("Could not load audio") ||
-        error.message.includes("Failed to load")
+        errorMessage.includes("Could not load audio") ||
+        errorMessage.includes("Failed to load")
       ) {
         Alert.alert(
           "Error",

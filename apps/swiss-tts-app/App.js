@@ -12,6 +12,8 @@ import {
 import { Picker } from "@react-native-picker/picker";
 import { Audio } from "expo-av";
 import { StatusBar } from "expo-status-bar";
+import { initLlama } from 'llama.rn';
+import * as FileSystem from 'expo-file-system'; // Make sure expo-file-system is installed
 
 export default function App() {
   const [text, setText] = useState("Guten Tag, mein Name ist Abhay Singh.");
@@ -22,6 +24,28 @@ export default function App() {
   const API_IP = process.env.EXPO_PUBLIC_API_IP;
 
   useEffect(() => {
+        async function loadLocalModel() {
+      try {
+        setStatusMessage('Mounting safe sandbox allocation...');
+        
+        // Dynamically resolves to the secure, internal app directory on Android 17
+        const modelPath = `${FileSystem.documentDirectory}gemma-4-E4B-it-Q4_K_M.gguf`;
+
+        const context = await initLlama({
+          model: modelPath,
+          use_mlock: true,      // Tells the kernel to pin the memory space
+          n_ctx: 1024,          
+          n_gpu_layers: 99,     // Offload layers to your Pixel 10 Tensor NPU
+        });
+
+        setLlamaContext(context);
+        setIsModelLoading(false);
+        setStatusMessage('Tensor engine ready. Model loaded fully on-device.');
+      } catch (error) {
+        console.error("Local inference initiation failed:", error);
+        setStatusMessage(`Engine crash: ${error.message}`);
+      }
+    }
     if (!API_IP) {
       throw new Error(
         "EXPO_PUBLIC_API_IP environment variable is not defined. Please configure it in your .env file.",

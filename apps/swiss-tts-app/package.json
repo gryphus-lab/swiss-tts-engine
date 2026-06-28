@@ -5,6 +5,7 @@
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
+    "build:android:preview:local": "JAVA_HOME=\"/Applications/Android Studio.app/Contents/jbr/Contents/Home\" ANDROID_HOME=\"$HOME/Library/Android/sdk\" ANDROID_SDK_ROOT=\"$HOME/Library/Android/sdk\" ANDROID_NDK_HOME=\"$HOME/Library/Android/sdk/ndk/27.1.12297006\" NODE_ENV=production eas build -p android --profile preview --local",
     "lint": "prettier --check .",
     "format": "prettier --write .",
     "test": "jest --coverage"

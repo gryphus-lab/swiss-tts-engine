@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@react-native-picker/picker": "2.11.4",
+    "@react-native/jest-preset": "^0.86.0",
     "expo": "~56.0.12",
     "expo-asset": "~56.0.17",
     "expo-build-properties": "~56.0.19",

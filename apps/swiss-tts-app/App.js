@@ -10,10 +10,10 @@ import {
   SafeAreaView,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
-import { Audio } from "expo-av";
+import { AudioPlayer } from "expo-audio"; // Migrated to modern SDK 56 Audio Engine
 import { StatusBar } from "expo-status-bar";
 import { initLlama } from "llama.rn";
-import * as FileSystem from "expo-file-system"; // Make sure expo-file-system is installed
+import * as FileSystem from "expo-file-system";
 
 const API_IP = process.env.EXPO_PUBLIC_API_IP;
 if (!API_IP) {
@@ -26,7 +26,7 @@ export default function App() {
   const [text, setText] = useState("Guten Tag, mein Name ist Abhay Singh.");
   const [dialect, setDialect] = useState("zurich");
   const [loading, setLoading] = useState(false);
-  const [sound, setSound] = useState(null);
+  const [player, setPlayer] = useState(null); // Managed player state
   const [llamaContext, setLlamaContext] = useState(null);
   const [isModelLoading, setIsModelLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
@@ -34,16 +34,17 @@ export default function App() {
   useEffect(() => {
     async function loadLocalModel() {
       try {
+        setIsModelLoading(true);
         setStatusMessage("Mounting safe sandbox allocation...");
 
-        // Dynamically resolves to the secure, internal app directory on Android 17
+        // Dynamically resolves to the secure, internal app directory on Android
         const modelPath = `${FileSystem.documentDirectory}gemma-4-E4B-it-Q4_K_M.gguf`;
 
         const context = await initLlama({
           model: modelPath,
           use_mlock: true, // Tells the kernel to pin the memory space
           n_ctx: 1024,
-          n_gpu_layers: 99, // Offload layers to your Pixel 10 Tensor NPU
+          n_gpu_layers: 99, // Offload layers to Tensor NPU
         });
 
         setLlamaContext(context);
@@ -52,15 +53,19 @@ export default function App() {
       } catch (error) {
         console.error("Local inference initiation failed:", error);
         setStatusMessage(`Engine crash: ${error.message}`);
+        setIsModelLoading(false);
       }
     }
     loadLocalModel();
+
+    // Cleanup player instance when component unmounts to protect memory layers
     return () => {
-      if (sound) {
-        sound.unloadAsync();
+      if (player) {
+        player.remove();
+        player.release();
       }
     };
-  }, [sound]);
+  }, [player]);
 
   async function generateAndPlayAudio() {
     if (!text.trim()) {
@@ -70,9 +75,11 @@ export default function App() {
 
     setLoading(true);
     try {
-      if (sound) {
-        await sound.unloadAsync();
-        setSound(null);
+      // Safely dispose of the previous player pipeline to clear the stream buffer
+      if (player) {
+        player.remove();
+        player.release();
+        setPlayer(null);
       }
 
       const response = await fetch(`http://${API_IP}:8000/api/v1/synthesize`, {
@@ -105,11 +112,10 @@ export default function App() {
       const data = await response.json();
       const audioUrl = `http://${API_IP}:8000${data.audio_url}?t=${Date.now()}`;
 
-      const { sound: newSound } = await Audio.Sound.createAsync(
-        { uri: audioUrl },
-        { shouldPlay: true },
-      );
-      setSound(newSound);
+      // Initialize the native modern AudioPlayer instance
+      const newPlayer = new AudioPlayer(audioUrl);
+      setPlayer(newPlayer);
+      await newPlayer.play();
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
@@ -128,7 +134,8 @@ export default function App() {
         );
       } else if (
         errorMessage.includes("Could not load audio") ||
-        errorMessage.includes("Failed to load")
+        errorMessage.includes("Failed to load") ||
+        errorMessage.includes("AudioPlayer")
       ) {
         Alert.alert(
           "Error",
@@ -187,6 +194,10 @@ export default function App() {
             <Text style={styles.buttonText}>Speak Dialect</Text>
           )}
         </TouchableOpacity>
+
+        {statusMessage ? (
+          <Text style={styles.statusText}>{statusMessage}</Text>
+        ) : null}
       </View>
     </SafeAreaView>
   );
@@ -257,5 +268,12 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 18,
     fontWeight: "bold",
+  },
+  statusText: {
+    marginTop: 20,
+    textAlign: "center",
+    color: "#555",
+    fontSize: 12,
+    fontFamily: "monospace",
   },
 });

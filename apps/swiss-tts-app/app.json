@@ -42,7 +42,8 @@
           "forceCxx20": true,
           "enableOpenCLAndHexagon": true
         }
-      ]
+      ],
+      "expo-video"
     ],
     "extra": {
       "eas": {

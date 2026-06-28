@@ -9,7 +9,7 @@ java = '21'
 _.python.venv = { path = ".venv", create = true }
 PROJECT_NAME = "{{ config_root | basename }}"
 VIRTUAL_ENV = "{{ config_root }}/.venv"
-JAVA_HOME = "{{ mise_data_dir }}/installs/java/21"
+JAVA_HOME = "{{ env.MISE_DATA_DIR | default(value='$HOME/.local/share/mise') }}/installs/java/21"
 ANDROID_HOME = "{{ env.HOME }}/Library/Android/sdk"
 ANDROID_SDK_ROOT = "{{ env.HOME }}/Library/Android/sdk"
 ANDROID_NDK_HOME = "{{ env.HOME }}/Library/Android/sdk/ndk/27.1.12297006"
@@ -18,6 +18,7 @@ PATH = "{{ env.JAVA_HOME }}/bin:{{ config_root }}/.venv/bin:{{env.PATH}}"
 
 [settings]
 activate_aggressive = true
+env_shell_expand = true
 
 [tasks.info]
 description = "Print project information"
@@ -25,6 +26,7 @@ run = '''
 echo "Project: $PROJECT_NAME"
 echo "Python: $(python --version)"
 echo "Java: $(java -version 2>&1 | head -n 1)"
+echo "JAVA_HOME: $JAVA_HOME"
 echo "Virtual env: $VIRTUAL_ENV"
 '''
 

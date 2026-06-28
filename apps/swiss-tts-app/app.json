@@ -2,7 +2,6 @@
   "expo": {
     "name": "swiss-tts-app",
     "slug": "swiss-tts-app",
-    "entryPoint": "./App.js",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -22,7 +21,29 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": ["expo-asset"],
+    "plugins": [
+      "expo-asset",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "largeHeap": true,
+            "usesCleartextTraffic": true,
+            "kotlinVersion": "2.1.20",
+            "ndkVersion": "26.1.10909125"
+          }
+        }
+      ],
+      [
+        "llama.rn",
+        {
+          "enableEntitlements": true,
+          "entitlementsProfile": "production",
+          "forceCxx20": true,
+          "enableOpenCL": true
+        }
+      ]
+    ],
     "extra": {
       "eas": {
         "projectId": "7f5ff604-ea81-479c-bad9-852ab6d5a120"

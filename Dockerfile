@@ -62,7 +62,7 @@ CMD ["uvicorn", "swiss_tts.api:app", "--host", "0.0.0.0", "--port", "8000"]
 # ==========================================
 # STAGE 3: Expo Mobile Frontend
 # ==========================================
-FROM node:20-alpine AS frontend
+FROM node:26-alpine AS frontend
 
 # Move into the app folder so expo finds app.json automatically
 WORKDIR /app/apps/swiss-tts-app

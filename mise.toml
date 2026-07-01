@@ -2,23 +2,31 @@
 python = "3.12"
 uv = 'latest'
 prettier = 'latest'
+java = '21'
 
 # Automatic virtual environment
 [env]
 _.python.venv = { path = ".venv", create = true }
 PROJECT_NAME = "{{ config_root | basename }}"
 VIRTUAL_ENV = "{{ config_root }}/.venv"
-PATH = "{{ config_root }}/.venv/bin:{{env.PATH}}"
+JAVA_HOME = "{{ env.MISE_DATA_DIR | default(value='$HOME/.local/share/mise') }}/installs/java/21"
+ANDROID_HOME = "{{ env.HOME }}/Library/Android/sdk"
+ANDROID_SDK_ROOT = "{{ env.HOME }}/Library/Android/sdk"
+ANDROID_NDK_HOME = "{{ env.HOME }}/Library/Android/sdk/ndk/27.1.12297006"
+PATH = "{{ env.JAVA_HOME }}/bin:{{ config_root }}/.venv/bin:{{env.PATH}}"
 
 
 [settings]
 activate_aggressive = true
+env_shell_expand = true
 
 [tasks.info]
 description = "Print project information"
 run = '''
 echo "Project: $PROJECT_NAME"
 echo "Python: $(python --version)"
+echo "Java: $(java -version 2>&1 | head -n 1)"
+echo "JAVA_HOME: $JAVA_HOME"
 echo "Virtual env: $VIRTUAL_ENV"
 '''
 
@@ -56,6 +64,10 @@ run = [
 ]
 
 # Application tasks
+[tasks.android-preview-build]
+description = "Build the Swiss TTS Android preview APK locally"
+run = "npm run build:android:preview:local --prefix apps/swiss-tts-app"
+
 [tasks.generate]
 description = "Generate Swiss German speech audio"
 run = "uv run --package swiss-tts-engine python -m swiss_tts.main"

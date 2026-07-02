@@ -10,7 +10,7 @@ dependencies = []
 dev = [
     "pytest>=8.0",
     "pytest-cov>=4.0",
-    "ruff>=0.15.18",
+    "ruff>=0.15.20",
 ]
 
 [tool.ruff]

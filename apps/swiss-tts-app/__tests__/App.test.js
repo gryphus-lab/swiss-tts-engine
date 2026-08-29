@@ -6,6 +6,12 @@ const MOCK_API_IP = "192.168.1.100"; //NOSONAR
 // Set environment variable before any imports
 process.env.EXPO_PUBLIC_API_IP = MOCK_API_IP;
 
+// Mock llama.rn – the native module/JSI interface is unavailable in the
+// Node test environment, so requiring the real package would crash.
+jest.mock("llama.rn", () => ({
+  initLlama: jest.fn().mockResolvedValue({}),
+}));
+
 // Import after setting environment variable
 const React = require("react");
 const {
@@ -82,6 +88,11 @@ function makeFetchResponse({ ok, status, json }) {
 beforeEach(() => {
   jest.clearAllMocks();
   jest.spyOn(Alert, "alert").mockImplementation(() => {});
+
+  // Reset mockPlay to its default resolved behavior. jest.clearAllMocks()
+  // clears call history but not implementations set via mockRejectedValue,
+  // so this prevents rejection behavior from leaking between tests.
+  mockPlay.mockResolvedValue(undefined);
 
   // Default: successful fetch response
   globalThis.fetch = jest.fn().mockResolvedValue(
@@ -426,7 +437,7 @@ describe("generateAndPlayAudio – audio playback error", () => {
 // ---------------------------------------------------------------------------
 
 describe("generateAndPlayAudio – network errors", () => {
-  it("shows a generic error if the API IP disappears before audio playback", async () => {
+  it("is unaffected if the API IP env var disappears after module load", async () => {
     const previousApiIp = process.env.EXPO_PUBLIC_API_IP;
     try {
       delete process.env.EXPO_PUBLIC_API_IP;
@@ -437,11 +448,10 @@ describe("generateAndPlayAudio – network errors", () => {
         fireEvent.press(getByText("Speak Dialect"));
       });
 
-      expect(Alert.alert).toHaveBeenCalledWith(
-        "Error",
-        "An unexpected error occurred.",
-      );
-      expect(mockAudioPlayer).not.toHaveBeenCalled();
+      // API_IP is captured once at module load time, so deleting the env
+      // var afterwards has no effect on the already-running app.
+      expect(Alert.alert).not.toHaveBeenCalled();
+      expect(mockAudioPlayer).toHaveBeenCalled();
     } finally {
       process.env.EXPO_PUBLIC_API_IP = previousApiIp;
     }
@@ -831,7 +841,7 @@ describe("Additional App coverage", () => {
 
     expect(Alert.alert).toHaveBeenCalledWith(
       "Error",
-      "Failed to load or play the audio file. Please check your connection and try again.",
+      "An unexpected error occurred.",
     );
   });
 

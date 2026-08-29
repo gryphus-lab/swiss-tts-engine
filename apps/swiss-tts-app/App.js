@@ -57,8 +57,10 @@ export default function App() {
       }
     }
     loadLocalModel();
+  }, []);
 
-    // Cleanup player instance when component unmounts to protect memory layers
+  // Cleanup player instance when it changes or the component unmounts to protect memory layers
+  useEffect(() => {
     return () => {
       if (player) {
         player.remove();

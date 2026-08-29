@@ -28,7 +28,7 @@
         {
           "android": {
             "largeHeap": true,
-            "usesCleartextTraffic": false,
+            "usesCleartextTraffic": true,
             "kotlinVersion": "2.1.20",
             "ndkVersion": "27.1.12297006"
           }
@@ -42,8 +42,7 @@
           "forceCxx20": true,
           "enableOpenCLAndHexagon": true
         }
-      ],
-      "expo-video"
+      ]
     ],
     "extra": {
       "eas": {

@@ -77,10 +77,9 @@ export default function App() {
 
     setLoading(true);
     try {
-      // Safely dispose of the previous player pipeline to clear the stream buffer
+      // The [player] cleanup effect disposes the previous player when it
+      // changes; only clear the reference here to avoid double release().
       if (player) {
-        player.remove();
-        player.release();
         setPlayer(null);
       }
 

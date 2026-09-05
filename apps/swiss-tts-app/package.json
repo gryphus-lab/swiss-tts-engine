@@ -14,7 +14,7 @@
     "@react-native-picker/picker": "2.11.4",
     "@react-native/jest-preset": "^0.86.0",
     "expo": "~57.0.18",
-    "expo-asset": "~57.0.2",
+    "expo-asset": "~57.0.16",
     "expo-audio": "~56.0.8",
     "expo-build-properties": "~56.0.19",
     "expo-file-system": "~56.0.8",

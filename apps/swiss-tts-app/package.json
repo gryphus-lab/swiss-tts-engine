@@ -21,7 +21,7 @@
     "expo-status-bar": "~57.0.1",
     "llama.rn": "^0.12.5",
     "react": "19.2.3",
-    "react-native": "0.85.3",
+    "react-native": "0.87.1",
     "react-native-url-polyfill": "^4.0.0",
     "syncpack": "^15.3.2"
   },

@@ -62,7 +62,8 @@ def test_generate_dialect_speech_saves_file(tmp_path, monkeypatch):
     assert os.path.exists(str(tmp_path))
     assert out.endswith("testdialect_speech.wav")
     # Ensure soundfile.write was called with correct sample rate
-    assert calls and calls[0][2] == 16000
+    assert calls
+    assert calls[0][2] == 16000
 
 
 # --- Additional tests for changed code in this PR ---

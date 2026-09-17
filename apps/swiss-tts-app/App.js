@@ -13,7 +13,10 @@ import { Audio } from "expo-av";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const API_IP = (process.env.EXPO_PUBLIC_API_IP || "").trim();
+let API_IP = (process.env.EXPO_PUBLIC_API_IP || "").trim();
+while (API_IP.endsWith("/")) {
+  API_IP = API_IP.slice(0, -1);
+}
 if (!API_IP) {
   throw new Error(
     "EXPO_PUBLIC_API_IP environment variable is not defined. Please configure it in your .env file.",
@@ -22,7 +25,7 @@ if (!API_IP) {
 
 const API_BASE_URL =
   API_IP.startsWith("http://") || API_IP.startsWith("https://")
-    ? API_IP.replace(/\/+$/, "")
+    ? API_IP
     : `http://${API_IP}`;
 
 export default function App() {
@@ -30,7 +33,6 @@ export default function App() {
   const [dialect, setDialect] = useState("zurich");
   const [loading, setLoading] = useState(false);
   const [sound, setSound] = useState(null);
-  const [statusMessage, setStatusMessage] = useState("");
 
   // Unload the previous sound when it changes or the component unmounts.
   useEffect(() => {
@@ -166,10 +168,6 @@ export default function App() {
             <Text style={styles.buttonText}>Speak Dialect</Text>
           )}
         </TouchableOpacity>
-
-        {statusMessage ? (
-          <Text style={styles.statusText}>{statusMessage}</Text>
-        ) : null}
       </View>
     </SafeAreaView>
   );

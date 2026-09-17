@@ -169,9 +169,9 @@ def run_translation_pipeline(
                 dialect_name=dialect,
                 silence_duration=config.DEFAULT_SILENCE_DURATION,
             )
-        except Exception as e:  # noqa: BLE001 - continue processing other dialects
-            logging.error(  # noqa: LOG015 - preserve application-wide logging configuration
-                "Failed to process dialect '%s': %s", dialect, e
+        except Exception:
+            logging.exception(  # noqa: LOG015 - preserve application-wide logging configuration
+                "Failed to process dialect '%s'", dialect
             )
             continue
 

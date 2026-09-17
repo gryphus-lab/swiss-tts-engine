@@ -27,20 +27,22 @@ const App = require("../App").default;
 // Module mocks
 // ---------------------------------------------------------------------------
 
-// Mock expo-audio AudioPlayer
-const mockPlay = jest.fn().mockResolvedValue(undefined);
-const mockRemove = jest.fn();
-const mockRelease = jest.fn();
-const mockAudioPlayer = jest.fn().mockImplementation((uri) => ({
-  uri,
-  play: mockPlay,
-  remove: mockRemove,
-  release: mockRelease,
+// Mock expo-av Audio.Sound
+const mockPlayAsync = jest.fn().mockResolvedValue(undefined);
+const mockUnloadAsync = jest.fn().mockResolvedValue(undefined);
+const mockCreateAsync = jest.fn().mockImplementation(async (source) => ({
+  sound: {
+    source,
+    playAsync: mockPlayAsync,
+    unloadAsync: mockUnloadAsync,
+  },
 }));
 
-jest.mock("expo-audio", () => ({
-  AudioPlayer: function AudioPlayer(...args) {
-    return mockAudioPlayer(...args);
+jest.mock("expo-av", () => ({
+  Audio: {
+    Sound: {
+      createAsync: (...args) => mockCreateAsync(...args),
+    },
   },
 }));
 
@@ -89,10 +91,11 @@ beforeEach(() => {
   jest.clearAllMocks();
   jest.spyOn(Alert, "alert").mockImplementation(() => {});
 
-  // Reset mockPlay to its default resolved behavior. jest.clearAllMocks()
+  // Reset mockPlayAsync to its default resolved behavior. jest.clearAllMocks()
   // clears call history but not implementations set via mockRejectedValue,
   // so this prevents rejection behavior from leaking between tests.
-  mockPlay.mockResolvedValue(undefined);
+  mockPlayAsync.mockResolvedValue(undefined);
+  mockUnloadAsync.mockResolvedValue(undefined);
 
   // Default: successful fetch response
   globalThis.fetch = jest.fn().mockResolvedValue(
@@ -103,12 +106,13 @@ beforeEach(() => {
     }),
   );
 
-  // Default: successful AudioPlayer creation
-  mockAudioPlayer.mockImplementation((uri) => ({
-    uri,
-    play: mockPlay,
-    remove: mockRemove,
-    release: mockRelease,
+  // Default: successful Audio.Sound creation
+  mockCreateAsync.mockImplementation(async (source) => ({
+    sound: {
+      source,
+      playAsync: mockPlayAsync,
+      unloadAsync: mockUnloadAsync,
+    },
   }));
 });
 
@@ -236,7 +240,7 @@ describe("generateAndPlayAudio – success path", () => {
     );
   });
 
-  it("calls AudioPlayer with the constructed audio URL", async () => {
+  it("creates an Audio.Sound with the constructed audio URL", async () => {
     const { getByText } = render(<App />);
 
     await act(async () => {
@@ -244,10 +248,10 @@ describe("generateAndPlayAudio – success path", () => {
     });
 
     await waitFor(() => {
-      expect(mockAudioPlayer).toHaveBeenCalled();
+      expect(mockCreateAsync).toHaveBeenCalled();
     });
 
-    const [audioUrl] = mockAudioPlayer.mock.calls[0];
+    const [{ uri: audioUrl }] = mockCreateAsync.mock.calls[0];
 
     expect(audioUrl).toEqual(
       expect.stringMatching(
@@ -255,7 +259,7 @@ describe("generateAndPlayAudio – success path", () => {
       ),
     );
 
-    expect(mockPlay).toHaveBeenCalled();
+    expect(mockPlayAsync).toHaveBeenCalled();
   });
 
   it("includes a cache-busting timestamp in the audio URL", async () => {
@@ -268,9 +272,9 @@ describe("generateAndPlayAudio – success path", () => {
       fireEvent.press(getByText("Speak Dialect"));
     });
 
-    expect(mockAudioPlayer).toHaveBeenCalledWith(
-      `http://${MOCK_API_IP}:8000/audio/test.wav?t=${fixedTime}`,
-    );
+    expect(mockCreateAsync).toHaveBeenCalledWith({
+      uri: `http://${MOCK_API_IP}:8000/audio/test.wav?t=${fixedTime}`,
+    });
   });
 
   it("does not show an error alert on successful synthesis", async () => {
@@ -416,8 +420,8 @@ describe("generateAndPlayAudio – JSON parse error", () => {
 // ---------------------------------------------------------------------------
 
 describe("generateAndPlayAudio – audio playback error", () => {
-  it("shows audio playback error message when AudioPlayer.play throws", async () => {
-    mockPlay.mockRejectedValue(new Error("Could not load audio"));
+  it("shows audio playback error message when Audio.Sound.playAsync throws", async () => {
+    mockPlayAsync.mockRejectedValue(new Error("Could not load audio"));
 
     const { getByText } = render(<App />);
 
@@ -451,7 +455,7 @@ describe("generateAndPlayAudio – network errors", () => {
       // API_IP is captured once at module load time, so deleting the env
       // var afterwards has no effect on the already-running app.
       expect(Alert.alert).not.toHaveBeenCalled();
-      expect(mockAudioPlayer).toHaveBeenCalled();
+      expect(mockCreateAsync).toHaveBeenCalled();
     } finally {
       process.env.EXPO_PUBLIC_API_IP = previousApiIp;
     }
@@ -546,40 +550,36 @@ describe("generateAndPlayAudio – loading state", () => {
 // ---------------------------------------------------------------------------
 
 describe("generateAndPlayAudio – sound resource management", () => {
-  it("releases the previously loaded player before creating a new one", async () => {
+  it("unloads the previously loaded sound before creating a new one", async () => {
     const { getByText } = render(<App />);
 
-    // First press – loads the first player
+    // First press – loads the first sound
     await act(async () => {
       fireEvent.press(getByText("Speak Dialect"));
     });
 
-    expect(mockRemove).not.toHaveBeenCalled();
-    expect(mockRelease).not.toHaveBeenCalled();
+    expect(mockUnloadAsync).not.toHaveBeenCalled();
 
-    // Second press – should release the first player before loading the second
+    // Second press – should unload the first sound before loading the second
     await act(async () => {
       fireEvent.press(getByText("Speak Dialect"));
     });
 
-    expect(mockRemove).toHaveBeenCalled();
-    expect(mockRelease).toHaveBeenCalled();
+    expect(mockUnloadAsync).toHaveBeenCalledTimes(1);
   });
 
-  it("calls remove and release on the active player when the component unmounts", async () => {
+  it("unloads the active sound when the component unmounts", async () => {
     const { getByText, unmount } = render(<App />);
 
     await act(async () => {
       fireEvent.press(getByText("Speak Dialect"));
     });
 
-    expect(mockRemove).not.toHaveBeenCalled();
-    expect(mockRelease).not.toHaveBeenCalled();
+    expect(mockUnloadAsync).not.toHaveBeenCalled();
 
     unmount();
 
-    expect(mockRemove).toHaveBeenCalled();
-    expect(mockRelease).toHaveBeenCalled();
+    expect(mockUnloadAsync).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -718,7 +718,7 @@ describe("generateAndPlayAudio – boundary and regression cases", () => {
     );
   });
 
-  it("does not call AudioPlayer when the HTTP response is not ok", async () => {
+  it("does not create an Audio.Sound when the HTTP response is not ok", async () => {
     globalThis.fetch = jest
       .fn()
       .mockResolvedValue(
@@ -731,10 +731,10 @@ describe("generateAndPlayAudio – boundary and regression cases", () => {
       fireEvent.press(getByText("Speak Dialect"));
     });
 
-    expect(mockAudioPlayer).not.toHaveBeenCalled();
+    expect(mockCreateAsync).not.toHaveBeenCalled();
   });
 
-  it("does not call AudioPlayer when JSON parsing fails", async () => {
+  it("does not create an Audio.Sound when JSON parsing fails", async () => {
     globalThis.fetch = jest.fn().mockResolvedValue({
       ok: true,
       status: 200,
@@ -747,7 +747,7 @@ describe("generateAndPlayAudio – boundary and regression cases", () => {
       fireEvent.press(getByText("Speak Dialect"));
     });
 
-    expect(mockAudioPlayer).not.toHaveBeenCalled();
+    expect(mockCreateAsync).not.toHaveBeenCalled();
   });
 
   it("shows only one alert per failed request", async () => {
@@ -819,8 +819,8 @@ describe("Additional App coverage", () => {
     });
   });
 
-  it("cleans up previous player before attempting a second playback", async () => {
-    mockPlay
+  it("cleans up the previous sound before attempting a second playback", async () => {
+    mockPlayAsync
       .mockResolvedValueOnce(undefined)
       .mockRejectedValueOnce(new Error("audio failed"));
 
@@ -836,8 +836,7 @@ describe("Additional App coverage", () => {
       fireEvent.press(getByText("Speak Dialect"));
     });
 
-    expect(mockRemove).toHaveBeenCalled();
-    expect(mockRelease).toHaveBeenCalled();
+    expect(mockUnloadAsync).toHaveBeenCalledTimes(1);
 
     expect(Alert.alert).toHaveBeenCalledWith(
       "Error",
@@ -858,9 +857,9 @@ describe("Additional App coverage", () => {
       fireEvent.press(getByText("Speak Dialect"));
     });
 
-    expect(mockAudioPlayer).toHaveBeenCalledWith(
-      expect.stringContaining("undefined"),
-    );
+    expect(mockCreateAsync).toHaveBeenCalledWith({
+      uri: expect.stringContaining("undefined"),
+    });
 
     expect(Alert.alert).not.toHaveBeenCalled();
   });

@@ -1,10 +1,9 @@
 import os
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
-from types import SimpleNamespace
-
-from swiss_tts import main, config
+from swiss_tts import config, main
 from swiss_tts.main import SwissTTSEngine
 
 
@@ -118,6 +117,22 @@ def test_generate_dialect_speech_zero_silence_duration(monkeypatch, tmp_path):
     )
     assert out.endswith("testdialect_speech.wav")
     assert calls
+
+
+def test_generate_dialect_speech_does_not_add_trailing_silence(monkeypatch, tmp_path):
+    calls = []
+
+    def fake_write(path, data, samplerate):
+        calls.append((path, np.asarray(data), samplerate))
+
+    monkeypatch.setattr(main, "sf", SimpleNamespace(write=fake_write))
+    engine = _make_engine(monkeypatch)
+    engine.generate_dialect_speech(
+        "Hello. World", "testdialect", silence_duration=1.0, output_dir=str(tmp_path)
+    )
+
+    # Two two-sample sentences plus one inter-sentence pause, with no final pause.
+    assert len(calls[0][1]) == 2 + 16000 + 2
 
 
 def test_generate_dialect_speech_output_filename_format(monkeypatch, tmp_path):
@@ -275,6 +290,14 @@ def test_run_translation_pipeline_uses_default_dialects(monkeypatch):
     assert calls[1] == ("generate", "zurich", config.DEFAULT_SILENCE_DURATION)
     assert ("translate", "bern") in calls
     assert ("translate", "basel") in calls
+
+
+@pytest.mark.parametrize("invalid_input", [None, "", "   "])
+def test_run_translation_pipeline_rejects_empty_input(invalid_input):
+    with pytest.raises(
+        ValueError, match="hochdeutsch_input must be a non-empty string"
+    ):
+        main.run_translation_pipeline(invalid_input)
 
 
 def test_run_translation_pipeline_raises_for_unsupported_dialects():

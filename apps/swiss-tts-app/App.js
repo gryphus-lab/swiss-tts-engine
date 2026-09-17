@@ -7,67 +7,39 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-  SafeAreaView,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
-import { AudioPlayer } from "expo-audio"; // Migrated to modern SDK 56 Audio Engine
+import { Audio } from "expo-av";
 import { StatusBar } from "expo-status-bar";
-import { initLlama } from "llama.rn";
-import * as FileSystem from "expo-file-system";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-const API_IP = process.env.EXPO_PUBLIC_API_IP;
+const API_IP = (process.env.EXPO_PUBLIC_API_IP || "").trim();
 if (!API_IP) {
   throw new Error(
     "EXPO_PUBLIC_API_IP environment variable is not defined. Please configure it in your .env file.",
   );
 }
 
+const API_BASE_URL =
+  API_IP.startsWith("http://") || API_IP.startsWith("https://")
+    ? API_IP.replace(/\/+$/, "")
+    : `http://${API_IP}`;
+
 export default function App() {
   const [text, setText] = useState("Guten Tag, mein Name ist Abhay Singh.");
   const [dialect, setDialect] = useState("zurich");
   const [loading, setLoading] = useState(false);
-  const [player, setPlayer] = useState(null); // Managed player state
-  const [llamaContext, setLlamaContext] = useState(null);
-  const [isModelLoading, setIsModelLoading] = useState(false);
+  const [sound, setSound] = useState(null);
   const [statusMessage, setStatusMessage] = useState("");
 
-  useEffect(() => {
-    async function loadLocalModel() {
-      try {
-        setIsModelLoading(true);
-        setStatusMessage("Mounting safe sandbox allocation...");
-
-        // Dynamically resolves to the secure, internal app directory on Android
-        const modelPath = `${FileSystem.documentDirectory}gemma-4-E4B-it-Q4_K_M.gguf`;
-
-        const context = await initLlama({
-          model: modelPath,
-          use_mlock: true, // Tells the kernel to pin the memory space
-          n_ctx: 1024,
-          n_gpu_layers: 99, // Offload layers to Tensor NPU
-        });
-
-        setLlamaContext(context);
-        setIsModelLoading(false);
-        setStatusMessage("Tensor engine ready. Model loaded fully on-device.");
-      } catch (error) {
-        console.error("Local inference initiation failed:", error);
-        setStatusMessage(`Engine crash: ${error.message}`);
-        setIsModelLoading(false);
-      }
-    }
-    loadLocalModel();
-  }, []);
-
-  // Cleanup player instance when it changes or the component unmounts to protect memory layers
+  // Unload the previous sound when it changes or the component unmounts.
   useEffect(() => {
     return () => {
-      if (player) {
-        player.remove();
-        player.release();
+      if (sound) {
+        void sound.unloadAsync();
       }
     };
-  }, [player]);
+  }, [sound]);
 
   async function generateAndPlayAudio() {
     if (!text.trim()) {
@@ -77,13 +49,11 @@ export default function App() {
 
     setLoading(true);
     try {
-      // The [player] cleanup effect disposes the previous player when it
-      // changes; only clear the reference here to avoid double release().
-      if (player) {
-        setPlayer(null);
+      if (sound) {
+        setSound(null);
       }
 
-      const response = await fetch(`http://${API_IP}:8000/api/v1/synthesize`, {
+      const response = await fetch(`${API_BASE_URL}:8000/api/v1/synthesize`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text, dialect }),
@@ -111,12 +81,13 @@ export default function App() {
       }
 
       const data = await response.json();
-      const audioUrl = `http://${API_IP}:8000${data.audio_url}?t=${Date.now()}`;
+      const audioUrl = `${API_BASE_URL}:8000${data.audio_url}?t=${Date.now()}`;
 
-      // Initialize the native modern AudioPlayer instance
-      const newPlayer = new AudioPlayer(audioUrl);
-      setPlayer(newPlayer);
-      await newPlayer.play();
+      const { sound: newSound } = await Audio.Sound.createAsync({
+        uri: audioUrl,
+      });
+      setSound(newSound);
+      await newSound.playAsync();
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
@@ -136,7 +107,7 @@ export default function App() {
       } else if (
         errorMessage.includes("Could not load audio") ||
         errorMessage.includes("Failed to load") ||
-        errorMessage.includes("AudioPlayer")
+        errorMessage.includes("Audio.Sound")
       ) {
         Alert.alert(
           "Error",

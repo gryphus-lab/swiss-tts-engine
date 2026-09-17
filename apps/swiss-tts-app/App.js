@@ -7,19 +7,22 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  SafeAreaView,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { AudioPlayer } from "expo-audio"; // Migrated to modern SDK 56 Audio Engine
 import { StatusBar } from "expo-status-bar";
-import { initLlama } from "llama.rn";
-import * as FileSystem from "expo-file-system";
 
-const API_IP = process.env.EXPO_PUBLIC_API_IP;
+const API_IP = (process.env.EXPO_PUBLIC_API_IP || "").trim();
 if (!API_IP) {
   throw new Error(
     "EXPO_PUBLIC_API_IP environment variable is not defined. Please configure it in your .env file.",
   );
 }
+
+const API_BASE_URL = API_IP.startsWith("http://") || API_IP.startsWith("https://")
+  ? API_IP.replace(/\/+$/, "")
+  : `http://${API_IP}`;
 
 export default function App() {
   const [text, setText] = useState("Guten Tag, mein Name ist Abhay Singh.");
@@ -27,31 +30,6 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [player, setPlayer] = useState(null); // Managed player state
   const [statusMessage, setStatusMessage] = useState("");
-
-  useEffect(() => {
-    async function loadLocalModel() {
-      try {
-        setStatusMessage("Mounting safe sandbox allocation...");
-
-        // Dynamically resolves to the secure, internal app directory on Android
-        const modelPath = `${FileSystem.documentDirectory}gemma-4-E4B-it-Q4_K_M.gguf`;
-
-        await initLlama({
-          model: modelPath,
-          use_mlock: true, // Tells the kernel to pin the memory space
-          n_ctx: 1024,
-          n_gpu_layers: 99, // Offload layers to Tensor NPU
-        });
-
-        setStatusMessage("Tensor engine ready. Model loaded fully on-device.");
-      } catch (error) {
-        console.error("Local inference initiation failed:", error);
-        setStatusMessage(`Engine crash: ${error.message}`);
-      }
-    }
-
-    loadLocalModel();
-  }, []);
 
   // Cleanup player instance when it changes or the component unmounts to protect memory layers
   useEffect(() => {
@@ -71,13 +49,13 @@ export default function App() {
 
     setLoading(true);
     try {
-      // The [player] cleanup effect disposes the previous player when it
-      // changes; only clear the reference here to avoid double release().
       if (player) {
+        player.remove();
+        player.release();
         setPlayer(null);
       }
 
-      const response = await fetch(`http://${API_IP}:8000/api/v1/synthesize`, {
+      const response = await fetch(`${API_BASE_URL}:8000/api/v1/synthesize`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text, dialect }),
@@ -105,12 +83,12 @@ export default function App() {
       }
 
       const data = await response.json();
-      const audioUrl = `http://${API_IP}:8000${data.audio_url}?t=${Date.now()}`;
+      const audioUrl = `${API_BASE_URL}:8000${data.audio_url}?t=${Date.now()}`;
 
       // Initialize the native modern AudioPlayer instance
       const newPlayer = new AudioPlayer(audioUrl);
       setPlayer(newPlayer);
-      newPlayer.play();
+      await newPlayer.play();
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
@@ -145,7 +123,7 @@ export default function App() {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <StatusBar style="auto" />
       <View style={styles.content}>
         <Text style={styles.title}>🇨🇭 Swiss TTS Mobile</Text>
@@ -194,7 +172,7 @@ export default function App() {
           <Text style={styles.statusText}>{statusMessage}</Text>
         ) : null}
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 

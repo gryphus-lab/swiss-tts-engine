@@ -31,7 +31,7 @@ The system currently supports these dialects:
 
 - Expo / React Native
 - React Native Picker for dialect selection
-- expo-audio and expo-file-system for audio playback and local file handling
+- expo-av and expo-file-system for audio playback and local file handling
 - Jest + React Native Testing Library for frontend tests
 
 ### Tooling
@@ -118,13 +118,13 @@ If Ollama is running elsewhere, set:
 export OLLAMA_URL=http://your-host:11434/v1
 ```
 
-For the Expo app, set:
+For the Expo app, set the backend origin (without a path), for example:
 
 ```bash
-export EXPO_PUBLIC_API_IP=192.168.1.10
+export EXPO_PUBLIC_API_IP=http://192.168.1.10
 ```
 
-The app expects this to be configured before launch.
+The app appends `:8000/api/v1/synthesize` to this origin before each request.
 
 ## Quick start
 

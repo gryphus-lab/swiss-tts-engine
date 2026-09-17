@@ -1,7 +1,10 @@
 import logging
 import os
 
+from dotenv import load_dotenv
 from openai import OpenAI
+
+load_dotenv()
 
 
 class DialectTranslator:
@@ -13,9 +16,13 @@ class DialectTranslator:
         defaulting to http://localhost:11434/v1 if not set.
         """
         ollama_url = os.getenv("OLLAMA_URL", "http://localhost:11434/v1")
+        api_key = os.getenv("OLLAMA_API_KEY", "ollama")
+        timeout = float(os.getenv("OLLAMA_TIMEOUT", "30"))
+        self.model = os.getenv("OLLAMA_MODEL", "gemma4")
+        self.temperature = float(os.getenv("OLLAMA_TEMPERATURE", "0.3"))
 
         # Point the standard OpenAI client to your local Ollama server
-        self.client = OpenAI(base_url=ollama_url, api_key="ollama", timeout=30)
+        self.client = OpenAI(base_url=ollama_url, api_key=api_key, timeout=timeout)
 
     def translate_to_dialect(self, input_text: str, target_dialect: str) -> str:
         """
@@ -32,7 +39,14 @@ class DialectTranslator:
         Raises:
             ValueError: If the API response contains no valid choices.
         """
-        print(f"🌍 Translating to {target_dialect.upper()} via Local AI...")
+        if not isinstance(input_text, str) or not input_text.strip():
+            raise ValueError("input_text must be a non-empty string")
+        if not isinstance(target_dialect, str) or not target_dialect.strip():
+            raise ValueError("target_dialect must be a non-empty string")
+
+        logging.info(  # noqa: LOG015 - preserve application-wide logging configuration
+            "🌍 Translating to %s via Local AI...", target_dialect.upper()
+        )
 
         prompt = f"""
         You are an expert in Swiss German dialects.
@@ -50,19 +64,27 @@ class DialectTranslator:
 
         try:
             response = self.client.chat.completions.create(
-                model="gemma4",
+                model=self.model,
                 messages=[{"role": "user", "content": prompt}],
-                temperature=0.3,
+                temperature=self.temperature,
             )
 
-            if not response.choices or len(response.choices) == 0:
+            if not response.choices:
                 raise ValueError("API returned empty choices")
 
-            translated_text = response.choices[0].message.content.strip()
-            logging.info(
-                f"Translated to {target_dialect} (length: {len(translated_text)} characters)"
+            content = response.choices[0].message.content
+            if not isinstance(content, str) or not content.strip():
+                raise ValueError("API response contained empty message content")
+
+            translated_text = content.strip()
+            logging.info(  # noqa: LOG015 - preserve application-wide logging configuration
+                "Translated to %s (length: %s characters)",
+                target_dialect,
+                len(translated_text),
             )
             return translated_text
-        except Exception as e:
-            logging.exception(f"Translation failed for {target_dialect}: {e}")
+        except Exception:
+            logging.exception(  # noqa: LOG015 - preserve application-wide logging configuration
+                "Translation failed for %s", target_dialect
+            )
             raise

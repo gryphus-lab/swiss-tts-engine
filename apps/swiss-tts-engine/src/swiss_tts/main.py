@@ -1,9 +1,12 @@
+import logging
 import os
 import re
 import warnings
+
 import numpy as np
 import soundfile as sf
 import torch
+
 from swiss_tts import config
 from swiss_tts.translator import DialectTranslator
 
@@ -36,8 +39,8 @@ def _load_espnet_dependencies() -> tuple[type, type]:
 
     if ModelDownloader is None or Text2Speech is None:
         _ensure_scipy_signal_compat()
-        from espnet_model_zoo.downloader import ModelDownloader as EspnetModelDownloader
         from espnet2.bin.tts_inference import Text2Speech as EspnetText2Speech
+        from espnet_model_zoo.downloader import ModelDownloader as EspnetModelDownloader
 
         ModelDownloader = EspnetModelDownloader
         Text2Speech = EspnetText2Speech
@@ -112,8 +115,9 @@ class SwissTTSEngine:
                 all_audio_chunks.append(outputs["wav"].numpy())
 
                 # Dynamic pause duration padding between speech tokens
-                silence = np.zeros(int(self.sample_rate * silence_duration))
-                all_audio_chunks.append(silence)
+                if _i < len(sentences):
+                    silence = np.zeros(int(self.sample_rate * silence_duration))
+                    all_audio_chunks.append(silence)
 
         # Concatenate audio chunks
         final_audio = np.concatenate(all_audio_chunks)
@@ -132,6 +136,9 @@ def run_translation_pipeline(
     Takes High German text, translates it to the requested dialects,
     and generates the corresponding audio files.
     """
+    if not isinstance(hochdeutsch_input, str) or not hochdeutsch_input.strip():
+        raise ValueError("hochdeutsch_input must be a non-empty string")
+
     if target_dialects is None:
         target_dialects = config.SUPPORTED_DIALECTS
 
@@ -162,8 +169,10 @@ def run_translation_pipeline(
                 dialect_name=dialect,
                 silence_duration=config.DEFAULT_SILENCE_DURATION,
             )
-        except Exception as e:
-            print(f"ERROR: Failed to process dialect '{dialect}': {e}")
+        except Exception as e:  # noqa: BLE001 - continue processing other dialects
+            logging.error(  # noqa: LOG015 - preserve application-wide logging configuration
+                "Failed to process dialect '%s': %s", dialect, e
+            )
             continue
 
 

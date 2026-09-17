@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-  SafeAreaView,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { AudioPlayer } from "expo-audio"; // Migrated to modern SDK 56 Audio Engine
@@ -27,35 +26,30 @@ export default function App() {
   const [dialect, setDialect] = useState("zurich");
   const [loading, setLoading] = useState(false);
   const [player, setPlayer] = useState(null); // Managed player state
-  const [llamaContext, setLlamaContext] = useState(null);
-  const [isModelLoading, setIsModelLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
 
   useEffect(() => {
     async function loadLocalModel() {
       try {
-        setIsModelLoading(true);
         setStatusMessage("Mounting safe sandbox allocation...");
 
         // Dynamically resolves to the secure, internal app directory on Android
         const modelPath = `${FileSystem.documentDirectory}gemma-4-E4B-it-Q4_K_M.gguf`;
 
-        const context = await initLlama({
+        await initLlama({
           model: modelPath,
           use_mlock: true, // Tells the kernel to pin the memory space
           n_ctx: 1024,
           n_gpu_layers: 99, // Offload layers to Tensor NPU
         });
 
-        setLlamaContext(context);
-        setIsModelLoading(false);
         setStatusMessage("Tensor engine ready. Model loaded fully on-device.");
       } catch (error) {
         console.error("Local inference initiation failed:", error);
         setStatusMessage(`Engine crash: ${error.message}`);
-        setIsModelLoading(false);
       }
     }
+
     loadLocalModel();
   }, []);
 
@@ -116,7 +110,7 @@ export default function App() {
       // Initialize the native modern AudioPlayer instance
       const newPlayer = new AudioPlayer(audioUrl);
       setPlayer(newPlayer);
-      await newPlayer.play();
+      newPlayer.play();
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
@@ -151,7 +145,7 @@ export default function App() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <StatusBar style="auto" />
       <View style={styles.content}>
         <Text style={styles.title}>🇨🇭 Swiss TTS Mobile</Text>
@@ -200,7 +194,7 @@ export default function App() {
           <Text style={styles.statusText}>{statusMessage}</Text>
         ) : null}
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 

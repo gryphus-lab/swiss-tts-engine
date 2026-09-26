@@ -570,7 +570,7 @@ wheels = [
 
 [[package]]
 name = "espnet-model-zoo"
-version = "0.1.7"
+version = "0.1.11"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "espnet" },
@@ -579,11 +579,12 @@ dependencies = [
     { name = "numpy" },
     { name = "pandas" },
     { name = "requests" },
+    { name = "torchaudio" },
     { name = "tqdm" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d8/88/3b49dca3f981380746ea5c6e766360aac42b28466c9fc9a29096669d9e45/espnet_model_zoo-0.1.7.tar.gz", hash = "sha256:61d88a1898d7d6bfebeb51100f194fa7fc9b68f959913255ee5ccf68090465b0", size = 23068, upload-time = "2021-10-11T12:53:00.796Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/5b/80/4b3db82f745dbe00021579c53996eb2f5aabe02383ffaad01414b2c81bbd/espnet_model_zoo-0.1.11.tar.gz", hash = "sha256:84bf9a0d02be1eaecaaee5c20a7e8659d358842a5b962ab3adb10cf8301045d1", size = 40997, upload-time = "2026-09-18T14:01:05.333Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/19/0e/b3340d59ded1ece54cca41d88f0be529598b43b3ec05b608dc03bd154a1a/espnet_model_zoo-0.1.7-py3-none-any.whl", hash = "sha256:8a228c44566f931e3113ec28c41f1e342be8b8897bad2fa99a6d51263e033743", size = 19610, upload-time = "2021-10-11T12:52:59.002Z" },
+    { url = "https://files.pythonhosted.org/packages/28/84/61744c981868db706e0cb9d2d4f307a2233f9b92884ac4c17a5916032ab9/espnet_model_zoo-0.1.11-py3-none-any.whl", hash = "sha256:62b136e91f6fcacb807aff7aaeebba83367ef9a7e9a8070038aa064fb8f34aaf", size = 31356, upload-time = "2026-09-18T14:01:04.042Z" },
 ]
 
 [[package]]

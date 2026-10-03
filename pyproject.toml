@@ -25,3 +25,8 @@ exclude = [
 members = [
     "apps/swiss-tts-engine",
 ]
+
+[tool.uv]
+override-dependencies = [
+    "sentencepiece>=0.2.1",
+]

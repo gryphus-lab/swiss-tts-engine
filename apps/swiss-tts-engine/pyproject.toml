@@ -16,7 +16,7 @@ dependencies = [
     "python-dotenv>=1.0.1",
     "fastapi>=0.139.0",
     "uvicorn>=0.51.0",
-    "setuptools>=80.9.0,<85",
+    "setuptools>=80.9.0,<81",
 ]
 
 [build-system]

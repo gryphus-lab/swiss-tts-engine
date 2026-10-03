@@ -1,29 +1,65 @@
 import logging
 import os
 import subprocess
+from urllib.parse import urlsplit
 
 from dotenv import load_dotenv
 from openai import APIError, OpenAI
 
 load_dotenv()
 
+logger = logging.getLogger(__name__)
 
-def _has_local_ollama() -> bool:
-    """Return True when the local Ollama CLI is available and reachable."""
+OLLAMA_CLI_CHECK_TIMEOUT = 5
+OLLAMA_MODEL_CHECK_TIMEOUT = 10
+OLLAMA_MODEL_PULL_TIMEOUT = 600
+
+
+def _ollama_cli_host(url: str) -> str | None:
+    """Return a CLI-compatible Ollama host for a standard OpenAI endpoint URL."""
+    parsed = urlsplit(url)
+    if (
+        parsed.scheme not in {"http", "https"}
+        or not parsed.hostname
+        or parsed.username
+        or parsed.password
+        or parsed.path.rstrip("/") not in {"", "/v1"}
+        or parsed.query
+        or parsed.fragment
+    ):
+        return None
+
+    host = parsed.hostname
+    if ":" in host:
+        host = f"[{host}]"
+    if parsed.port is not None:
+        host = f"{host}:{parsed.port}"
+    return f"{parsed.scheme}://{host}"
+
+
+def _has_local_ollama(url: str) -> bool:
+    """Return True when the Ollama CLI can reach the configured endpoint."""
+    host = _ollama_cli_host(url)
+    if host is None:
+        return False
     try:
         result = subprocess.run(
             ["ollama", "list"],
             capture_output=True,
             text=True,
             check=False,
+            timeout=OLLAMA_CLI_CHECK_TIMEOUT,
+            env={**os.environ, "OLLAMA_HOST": host},
         )
-    except FileNotFoundError:
+    except (FileNotFoundError, subprocess.TimeoutExpired):
         return False
     return result.returncode == 0
 
 
 def _is_ollama_server_available(url: str) -> bool:
     """Check whether the configured Ollama OpenAI-compatible endpoint is reachable."""
+    from urllib.error import URLError
+
     try:
         import urllib.request
 
@@ -34,7 +70,7 @@ def _is_ollama_server_available(url: str) -> bool:
         )
         with urllib.request.urlopen(request, timeout=5) as response:
             return response.status == 200
-    except Exception:
+    except (URLError, TimeoutError, ValueError):
         return False
 
 
@@ -47,17 +83,18 @@ class DialectTranslator:
         defaulting to http://localhost:11434/v1 if not set.
         """
         ollama_url = os.getenv("OLLAMA_URL", "http://localhost:11434/v1")
+        self.ollama_url = ollama_url
         api_key = os.getenv("OLLAMA_API_KEY", "ollama")
         timeout = float(os.getenv("OLLAMA_TIMEOUT", "30"))
         self.model = os.getenv("OLLAMA_MODEL", "gemma3:1b")
         self.temperature = float(os.getenv("OLLAMA_TEMPERATURE", "0.3"))
 
-        if not _has_local_ollama():
-            logging.warning(
-                "OLLAMA CLI is not available on PATH; translation will fail until it is installed."
+        if not _has_local_ollama(ollama_url):
+            logger.warning(
+                "OLLAMA CLI cannot reach the configured endpoint; automatic model recovery may be unavailable."
             )
         if not _is_ollama_server_available(ollama_url):
-            logging.warning(
+            logger.warning(
                 "Ollama endpoint %s is not reachable right now; translation requests will fail until the server is started.",
                 ollama_url,
             )
@@ -87,33 +124,60 @@ class DialectTranslator:
 
     def _pull_model_if_missing(self) -> None:
         """Try to fetch the configured Ollama model when it is not yet installed."""
+        host = _ollama_cli_host(self.ollama_url)
+        if host is None:
+            raise RuntimeError(
+                "Automatic Ollama model recovery is unavailable for configured URL "
+                f"'{self.ollama_url}'; install model '{self.model}' on that endpoint manually."
+            )
+        env = {**os.environ, "OLLAMA_HOST": host}
         try:
             result = subprocess.run(
                 ["ollama", "show", self.model],
                 capture_output=True,
                 text=True,
                 check=False,
+                timeout=OLLAMA_MODEL_CHECK_TIMEOUT,
+                env=env,
             )
             if result.returncode == 0:
                 return
+        except subprocess.TimeoutExpired as exc:
+            raise RuntimeError(
+                f"Timed out checking model '{self.model}' on Ollama endpoint '{host}'."
+            ) from exc
         except FileNotFoundError:
             raise RuntimeError(
                 "Local Ollama is not installed or not available on PATH. "
-                "Install Ollama and run 'ollama pull %s' or set OLLAMA_MODEL to an installed model."
-                % self.model
+                f"Install Ollama, set OLLAMA_HOST to '{host}', and run "
+                f"'ollama pull {self.model}'."
             ) from None
 
-        pull = subprocess.run(
-            ["ollama", "pull", self.model],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
+        try:
+            pull = subprocess.run(
+                ["ollama", "pull", self.model],
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=OLLAMA_MODEL_PULL_TIMEOUT,
+                env=env,
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise RuntimeError(
+                f"Timed out pulling model '{self.model}' from Ollama endpoint '{host}'."
+            ) from exc
+        except FileNotFoundError:
+            raise RuntimeError(
+                "Local Ollama is not installed or not available on PATH. "
+                f"Install Ollama, set OLLAMA_HOST to '{host}', and run "
+                f"'ollama pull {self.model}'."
+            ) from None
         if pull.returncode != 0:
             stderr = (pull.stderr or pull.stdout or "").strip()
             raise RuntimeError(
-                "Could not load Ollama model '%s'. Run 'ollama pull %s' manually. %s"
-                % (self.model, self.model, stderr)
+                f"Could not load Ollama model '{self.model}' from '{host}'. "
+                f"Set OLLAMA_HOST to that URL and run 'ollama pull {self.model}' "
+                f"manually. {stderr}"
             )
 
     def translate_to_dialect(self, input_text: str, target_dialect: str) -> str:
@@ -196,8 +260,14 @@ class DialectTranslator:
                         len(translated_text),
                     )
                     return translated_text
-                except Exception:
-                    pass
+                except Exception as recovery_error:
+                    logger.exception(
+                        "Automatic model recovery failed for %s", self.model
+                    )
+                    raise RuntimeError(
+                        f"Automatic recovery for Ollama model '{self.model}' failed: "
+                        f"{recovery_error}"
+                    ) from recovery_error
             logging.exception(  # noqa: LOG015 - preserve application-wide logging configuration
                 "Translation failed for %s", target_dialect
             )

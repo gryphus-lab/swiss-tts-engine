@@ -1,3 +1,4 @@
+import subprocess
 from types import SimpleNamespace
 
 import pytest
@@ -265,7 +266,7 @@ def test_get_health_status_checks_configured_model(
             assert kwargs == {"timeout": 5}
             return self
 
-    monkeypatch.setattr(translator, "_has_local_ollama", lambda: True)
+    monkeypatch.setattr(translator, "_has_local_ollama", lambda url: True)
     monkeypatch.setattr(translator, "_is_ollama_server_available", lambda url: True)
     monkeypatch.setattr(translator, "OpenAI", lambda **kwargs: HealthClient())
 
@@ -276,3 +277,109 @@ def test_get_health_status_checks_configured_model(
         "model": "gemma3:1b",
         "message": expected_message,
     }
+
+
+def test_pull_model_targets_configured_ollama_host(monkeypatch):
+    monkeypatch.setenv("OLLAMA_URL", "http://remote-ollama:11434/v1")
+    monkeypatch.setattr(translator, "_has_local_ollama", lambda url: True)
+    monkeypatch.setattr(translator, "_is_ollama_server_available", lambda url: True)
+    monkeypatch.setattr(translator, "OpenAI", lambda **kwargs: object())
+    commands = []
+
+    def fake_run(command, **kwargs):
+        commands.append((command, kwargs))
+        return SimpleNamespace(
+            returncode=1 if len(commands) == 1 else 0, stdout="", stderr=""
+        )
+
+    monkeypatch.setattr(translator.subprocess, "run", fake_run)
+
+    instance = DialectTranslator()
+    instance._pull_model_if_missing()
+
+    assert [command for command, _ in commands] == [
+        ["ollama", "show", "gemma3:1b"],
+        ["ollama", "pull", "gemma3:1b"],
+    ]
+    assert [kwargs["timeout"] for _, kwargs in commands] == [
+        translator.OLLAMA_MODEL_CHECK_TIMEOUT,
+        translator.OLLAMA_MODEL_PULL_TIMEOUT,
+    ]
+    assert all(
+        kwargs["env"]["OLLAMA_HOST"] == "http://remote-ollama:11434"
+        for _, kwargs in commands
+    )
+
+
+def test_pull_model_recovery_is_unavailable_for_unsupported_url(monkeypatch):
+    monkeypatch.setenv("OLLAMA_URL", "http://remote-ollama:11434/custom/v1")
+    monkeypatch.setattr(translator, "_has_local_ollama", lambda url: False)
+    monkeypatch.setattr(translator, "_is_ollama_server_available", lambda url: True)
+    monkeypatch.setattr(translator, "OpenAI", lambda **kwargs: object())
+    instance = DialectTranslator()
+
+    with pytest.raises(RuntimeError, match="Automatic Ollama model recovery is unavailable"):
+        instance._pull_model_if_missing()
+
+
+def test_ollama_cli_probe_times_out(monkeypatch):
+    def timeout(*args, **kwargs):
+        assert kwargs["timeout"] == translator.OLLAMA_CLI_CHECK_TIMEOUT
+        raise subprocess.TimeoutExpired(args[0], kwargs["timeout"])
+
+    monkeypatch.setattr(translator.subprocess, "run", timeout)
+
+    assert not translator._has_local_ollama("http://remote-ollama:11434/v1")
+
+
+def test_ollama_cli_probe_targets_configured_host(monkeypatch):
+    captured = {}
+
+    def successful_list(command, **kwargs):
+        captured["command"] = command
+        captured["host"] = kwargs["env"]["OLLAMA_HOST"]
+        return SimpleNamespace(returncode=0)
+
+    monkeypatch.setattr(translator.subprocess, "run", successful_list)
+
+    assert translator._has_local_ollama("http://remote-ollama:11434/v1")
+    assert captured == {
+        "command": ["ollama", "list"],
+        "host": "http://remote-ollama:11434",
+    }
+
+
+def test_pull_model_check_timeout_is_reported(monkeypatch):
+    monkeypatch.setenv("OLLAMA_URL", "http://remote-ollama:11434/v1")
+    monkeypatch.setattr(translator, "_has_local_ollama", lambda url: True)
+    monkeypatch.setattr(translator, "_is_ollama_server_available", lambda url: True)
+    monkeypatch.setattr(translator, "OpenAI", lambda **kwargs: object())
+
+    def timeout(*args, **kwargs):
+        raise subprocess.TimeoutExpired(args[0], kwargs["timeout"])
+
+    monkeypatch.setattr(translator.subprocess, "run", timeout)
+
+    with pytest.raises(RuntimeError, match="Timed out checking model"):
+        DialectTranslator()._pull_model_if_missing()
+
+
+def test_pull_model_download_timeout_is_reported(monkeypatch):
+    monkeypatch.setenv("OLLAMA_URL", "http://remote-ollama:11434/v1")
+    monkeypatch.setattr(translator, "_has_local_ollama", lambda url: True)
+    monkeypatch.setattr(translator, "_is_ollama_server_available", lambda url: True)
+    monkeypatch.setattr(translator, "OpenAI", lambda **kwargs: object())
+    calls = 0
+
+    def timeout_pull(command, **kwargs):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            return SimpleNamespace(returncode=1)
+        assert kwargs["timeout"] == translator.OLLAMA_MODEL_PULL_TIMEOUT
+        raise subprocess.TimeoutExpired(command, kwargs["timeout"])
+
+    monkeypatch.setattr(translator.subprocess, "run", timeout_pull)
+
+    with pytest.raises(RuntimeError, match="Timed out pulling model"):
+        DialectTranslator()._pull_model_if_missing()

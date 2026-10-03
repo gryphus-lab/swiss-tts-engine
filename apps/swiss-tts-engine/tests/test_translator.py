@@ -133,6 +133,38 @@ def test_translate_to_dialect_logs_and_rethrows_api_errors(monkeypatch, caplog):
     assert "api failure" in caplog.text
 
 
+def test_translate_retries_after_recovering_missing_model(monkeypatch):
+    class RecoveringClient(DummyOpenAI):
+        def __init__(self, *args):
+            super().__init__(*args)
+            self.attempts = 0
+
+        def create(self, model, messages, temperature):
+            self.attempts += 1
+            if self.attempts == 1:
+                raise RuntimeError("model not found")
+            return super().create(model, messages, temperature)
+
+    client = RecoveringClient("http://localhost:11434/v1", "ollama", 30)
+    monkeypatch.setattr(
+        translator,
+        "OpenAI",
+        lambda base_url, api_key, timeout: client,
+    )
+    monkeypatch.setattr(translator, "_has_local_ollama", lambda url: True)
+    monkeypatch.setattr(translator, "_is_ollama_server_available", lambda url: True)
+    monkeypatch.setattr(
+        DialectTranslator,
+        "_pull_model_if_missing",
+        lambda self: None,
+    )
+
+    result = DialectTranslator().translate_to_dialect("Guten Tag", "bern")
+
+    assert result == "üsbersetztä Text"
+    assert client.attempts == 2
+
+
 @pytest.mark.parametrize(
     ("input_text", "target_dialect", "message"),
     [
@@ -360,8 +392,9 @@ def test_pull_model_check_timeout_is_reported(monkeypatch):
 
     monkeypatch.setattr(translator.subprocess, "run", timeout)
 
+    instance = DialectTranslator()
     with pytest.raises(RuntimeError, match="Timed out checking model"):
-        DialectTranslator()._pull_model_if_missing()
+        instance._pull_model_if_missing()
 
 
 def test_pull_model_download_timeout_is_reported(monkeypatch):
@@ -381,5 +414,6 @@ def test_pull_model_download_timeout_is_reported(monkeypatch):
 
     monkeypatch.setattr(translator.subprocess, "run", timeout_pull)
 
+    instance = DialectTranslator()
     with pytest.raises(RuntimeError, match="Timed out pulling model"):
-        DialectTranslator()._pull_model_if_missing()
+        instance._pull_model_if_missing()

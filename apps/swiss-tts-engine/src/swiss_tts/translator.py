@@ -180,6 +180,27 @@ class DialectTranslator:
                 f"manually. {stderr}"
             )
 
+    def _request_translation(self, prompt: str, target_dialect: str) -> str:
+        response = self.client.chat.completions.create(
+            model=self.model,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=self.temperature,
+        )
+        if not response.choices:
+            raise ValueError("API returned empty choices")
+
+        content = response.choices[0].message.content
+        if not isinstance(content, str) or not content.strip():
+            raise ValueError("API response contained empty message content")
+
+        translated_text = content.strip()
+        logging.info(  # noqa: LOG015 - preserve application-wide logging configuration
+            "Translated to %s (length: %s characters)",
+            target_dialect,
+            len(translated_text),
+        )
+        return translated_text
+
     def translate_to_dialect(self, input_text: str, target_dialect: str) -> str:
         """
         Translate text to a specified Swiss German dialect in phonetic form.
@@ -219,56 +240,27 @@ class DialectTranslator:
         """
 
         try:
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=self.temperature,
-            )
-
-            if not response.choices:
-                raise ValueError("API returned empty choices")
-
-            content = response.choices[0].message.content
-            if not isinstance(content, str) or not content.strip():
-                raise ValueError("API response contained empty message content")
-
-            translated_text = content.strip()
-            logging.info(  # noqa: LOG015 - preserve application-wide logging configuration
-                "Translated to %s (length: %s characters)",
-                target_dialect,
-                len(translated_text),
-            )
-            return translated_text
+            return self._request_translation(prompt, target_dialect)
         except Exception as exc:
-            if "model" in str(exc).lower() and "not found" in str(exc).lower():
-                try:
-                    self._pull_model_if_missing()
-                    response = self.client.chat.completions.create(
-                        model=self.model,
-                        messages=[{"role": "user", "content": prompt}],
-                        temperature=self.temperature,
-                    )
-                    if not response.choices:
-                        raise ValueError("API returned empty choices")
-                    content = response.choices[0].message.content
-                    if not isinstance(content, str) or not content.strip():
-                        raise ValueError("API response contained empty message content")
-                    translated_text = content.strip()
-                    logging.info(  # noqa: LOG015 - preserve application-wide logging configuration
-                        "Translated to %s (length: %s characters)",
-                        target_dialect,
-                        len(translated_text),
-                    )
-                    return translated_text
-                except Exception as recovery_error:
-                    logger.exception(
-                        "Automatic model recovery failed for %s", self.model
-                    )
-                    raise RuntimeError(
-                        f"Automatic recovery for Ollama model '{self.model}' failed: "
-                        f"{recovery_error}"
-                    ) from recovery_error
+            if "model" not in str(exc).lower() or "not found" not in str(exc).lower():
+                logging.exception(  # noqa: LOG015 - preserve application-wide logging configuration
+                    "Translation failed for %s", target_dialect
+                )
+                raise
+
+        try:
+            self._pull_model_if_missing()
+        except Exception as recovery_error:
+            logger.exception("Automatic model recovery failed for %s", self.model)
+            raise RuntimeError(
+                f"Automatic recovery for Ollama model '{self.model}' failed: "
+                f"{recovery_error}"
+            ) from recovery_error
+
+        try:
+            return self._request_translation(prompt, target_dialect)
+        except Exception:
             logging.exception(  # noqa: LOG015 - preserve application-wide logging configuration
-                "Translation failed for %s", target_dialect
+                "Translation failed after model recovery for %s", target_dialect
             )
             raise

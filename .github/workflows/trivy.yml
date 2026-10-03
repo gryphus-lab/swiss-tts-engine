@@ -32,9 +32,16 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Build docker image
-        run: |
-          docker build -t gryphus-lab/swiss-tts-engine:${{ github.sha }} .
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          load: true
+          tags: gryphus-lab/swiss-tts-engine:${{ github.sha }}
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25

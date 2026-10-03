@@ -1,5 +1,8 @@
-from pathlib import Path
 import json
+import logging
+from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 # The default dialects our engine supports and wants to generate
@@ -74,7 +77,8 @@ def _read_json_file(path):
         return None
     try:
         return json.loads(path.read_text(encoding="utf8"))
-    except Exception:
+    except (json.JSONDecodeError, OSError, UnicodeError) as error:
+        logger.warning("Unable to read JSON text configuration %s: %s", path, error)
         return None
 
 

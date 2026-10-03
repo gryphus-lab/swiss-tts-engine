@@ -2,13 +2,14 @@ import logging
 import os
 import threading
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
+from swiss_tts import config
 from swiss_tts.main import SwissTTSEngine
 from swiss_tts.translator import DialectTranslator
-from swiss_tts import config
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +24,7 @@ def _load_models_background():
         models["engine"] = SwissTTSEngine()
         models["translator"] = DialectTranslator()
         print("✅ Models loaded successfully! Ready for requests.")
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - model startup failures are surfaced to health checks
         print(f"❌ Model loading failed: {e}")
         models["error"] = str(e)
 
@@ -53,7 +54,15 @@ class TTSRequest(BaseModel):
     dialect: str = "zurich"
 
 
-@app.get("/health")
+@app.get(
+    "/health",
+    responses={
+        503: {
+            "description": "Service unavailable or still loading.",
+            "content": {"application/json": {"example": {"detail": "Models still loading..."}}},
+        }
+    },
+)
 def health_check():
     """
     Indicate whether the service is ready to handle requests.
@@ -72,7 +81,14 @@ def health_check():
     return {"status": "ready", "message": "All models loaded and ready."}
 
 
-@app.post("/api/v1/synthesize")
+@app.post(
+    "/api/v1/synthesize",
+    responses={
+        400: {"description": "Unsupported dialect."},
+        500: {"description": "Audio generation failed."},
+        503: {"description": "Models still loading or failed to initialize."},
+    },
+)
 def synthesize_speech(request: TTSRequest):
     """
     Translate text to the specified dialect and generate synthesized speech audio.
@@ -106,9 +122,9 @@ def synthesize_speech(request: TTSRequest):
         output_path = models["engine"].generate_dialect_speech(
             text=final_text, dialect_name=request.dialect
         )
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - synthesis errors are converted to API responses
         raise HTTPException(
-            status_code=500, detail=f"Audio generation failed: {str(e)}"
+            status_code=500, detail=f"Audio generation failed: {e!s}"
         )
 
     filename = os.path.basename(output_path)
@@ -121,7 +137,13 @@ def synthesize_speech(request: TTSRequest):
     }
 
 
-@app.get("/api/v1/audio/{filename}")
+@app.get(
+    "/api/v1/audio/{filename}",
+    responses={
+        400: {"description": "Invalid file path."},
+        404: {"description": "Audio file not found."},
+    },
+)
 def get_audio_file(filename: str):
     """
     Serve a generated audio file from the output directory with path traversal protection.

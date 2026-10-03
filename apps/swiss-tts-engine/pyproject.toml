@@ -7,6 +7,7 @@ requires-python = ">=3.12"
 dependencies = [
     "espnet>=2023.1",
     "espnet-model-zoo>=0.1.6",
+    "sentencepiece>=0.2.1",
     "soundfile>=0.12.1",
     "numpy>=1.26.0",
     "torch>=2.13.0",

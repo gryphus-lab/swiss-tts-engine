@@ -59,7 +59,20 @@ class TTSRequest(BaseModel):
     responses={
         503: {
             "description": "Service unavailable or still loading.",
-            "content": {"application/json": {"example": {"detail": "Models still loading..."}}},
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": {
+                            "message": "Translator backend is not ready.",
+                            "translator": {
+                                "status": "unavailable",
+                                "model": "gemma3:1b",
+                                "message": "Ollama endpoint is unreachable.",
+                            },
+                        }
+                    }
+                }
+            },
         }
     },
 )
@@ -78,7 +91,20 @@ def health_check():
         raise HTTPException(status_code=503, detail="Service temporarily unavailable")
     if "engine" not in models or "translator" not in models:
         raise HTTPException(status_code=503, detail="Models still loading...")
-    return {"status": "ready", "message": "All models loaded and ready."}
+    translator_status = models["translator"].get_health_status()
+    if translator_status["status"] != "ready":
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "message": "Translator backend is not ready.",
+                "translator": translator_status,
+            },
+        )
+    return {
+        "status": "ready",
+        "message": "All models loaded and ready.",
+        "translator": translator_status,
+    }
 
 
 @app.post(

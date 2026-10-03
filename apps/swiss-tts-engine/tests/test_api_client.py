@@ -1,13 +1,19 @@
 import os
 
 from fastapi.testclient import TestClient
-
 from swiss_tts import api
 
 
 class DummyTranslator:
     def translate_to_dialect(self, text, dialect):
         return "translated text"
+
+    def get_health_status(self):
+        return {
+            "status": "ready",
+            "model": "gemma3:1b",
+            "message": "Ollama is ready.",
+        }
 
 
 class DummyEngine:

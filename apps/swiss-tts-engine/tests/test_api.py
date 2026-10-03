@@ -4,7 +4,6 @@ from types import SimpleNamespace
 import pytest
 from fastapi import HTTPException
 from fastapi.responses import FileResponse
-
 from swiss_tts import api
 
 
@@ -97,13 +96,41 @@ def test_get_audio_file_returns_fileresponse(tmp_path):
 
 def test_health_check_ready_when_models_present():
     api.models["engine"] = SimpleNamespace()
-    api.models["translator"] = SimpleNamespace()
+    api.models["translator"] = SimpleNamespace(
+        get_health_status=lambda: {
+            "status": "ready",
+            "model": "gemma3:1b",
+            "message": "Ollama is ready.",
+        }
+    )
 
     result = api.health_check()
     assert result == {
         "status": "ready",
         "message": "All models loaded and ready.",
+        "translator": {
+            "status": "ready",
+            "model": "gemma3:1b",
+            "message": "Ollama is ready.",
+        },
     }
+
+
+def test_health_check_returns_unavailable_when_ollama_is_unreachable():
+    api.models["engine"] = SimpleNamespace()
+    api.models["translator"] = SimpleNamespace(
+        get_health_status=lambda: {
+            "status": "unavailable",
+            "model": "gemma3:1b",
+            "message": "Ollama endpoint is unreachable.",
+        }
+    )
+
+    with pytest.raises(HTTPException) as exc:
+        api.health_check()
+
+    assert exc.value.status_code == 503
+    assert exc.value.detail["translator"]["message"] == "Ollama endpoint is unreachable."
 
 
 def test_synthesize_raises_for_model_loading_error():

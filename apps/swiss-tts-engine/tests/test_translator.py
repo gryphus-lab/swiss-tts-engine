@@ -43,7 +43,7 @@ def test_translate_to_dialect_uses_local_ollama_and_strips_response(monkeypatch)
 
     dummy_client = translator_instance.client
     request = dummy_client.request
-    assert request["model"] == "gemma4"
+    assert request["model"] == "gemma3:1b"
     assert request["temperature"] == 0.3
 
     prompt = request["messages"][0]["content"]
@@ -206,7 +206,7 @@ def test_dialect_translator_ollama_url_propagates_to_translation(monkeypatch):
 
     assert result == "üsbersetztä Text"
     assert dummy_client.request is not None
-    assert dummy_client.request["model"] == "gemma4"
+    assert dummy_client.request["model"] == "gemma3:1b"
 
 
 def test_dialect_translator_uses_configurable_client_and_request_settings(monkeypatch):
@@ -237,3 +237,42 @@ def test_dialect_translator_uses_configurable_client_and_request_settings(monkey
     }
     assert instance.client.request["model"] == "custom-model"
     assert instance.client.request["temperature"] == 0.7
+
+
+@pytest.mark.parametrize(
+    ("available_models", "expected_status", "expected_message"),
+    [
+        (["gemma3:1b"], "ready", "Ollama is ready."),
+        (
+            ["other-model"],
+            "unavailable",
+            "Configured Ollama model is not installed.",
+        ),
+    ],
+)
+def test_get_health_status_checks_configured_model(
+    monkeypatch, available_models, expected_status, expected_message
+):
+    class HealthClient:
+        def __init__(self):
+            self.models = SimpleNamespace(
+                list=lambda: SimpleNamespace(
+                    data=[SimpleNamespace(id=model) for model in available_models]
+                )
+            )
+
+        def with_options(self, **kwargs):
+            assert kwargs == {"timeout": 5}
+            return self
+
+    monkeypatch.setattr(translator, "_has_local_ollama", lambda: True)
+    monkeypatch.setattr(translator, "_is_ollama_server_available", lambda url: True)
+    monkeypatch.setattr(translator, "OpenAI", lambda **kwargs: HealthClient())
+
+    status = DialectTranslator().get_health_status()
+
+    assert status == {
+        "status": expected_status,
+        "model": "gemma3:1b",
+        "message": expected_message,
+    }

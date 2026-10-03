@@ -47,7 +47,7 @@ The system currently supports these dialects:
 User text
    ↓
 DialectTranslator
-   └─ local Ollama / OpenAI-compatible endpoint (gemma4)
+   └─ local Ollama / OpenAI-compatible endpoint (gemma3:1b by default)
          ↓ "phonetic Swiss German text"
 SwissTTSEngine
    └─ ESPnet TTS model download + CPU inference
@@ -157,7 +157,7 @@ uv run --package swiss-tts-engine uvicorn swiss_tts.api:app --reload --port 8000
 
 The backend serves a small HTML frontend from `apps/swiss-tts-engine/public/index.html` and exposes the following HTTP endpoints:
 
-- `GET /health` — checks if the engine and translator are ready
+- `GET /health` — checks if the engine, Ollama endpoint, and configured translator model are ready
 - `POST /api/v1/synthesize` — accepts `{ text, dialect }` and returns a generated audio URL
 - `GET /api/v1/audio/{filename}` — serves generated WAV files
 - `GET /` — serves the local frontend page

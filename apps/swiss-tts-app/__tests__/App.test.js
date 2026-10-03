@@ -19,6 +19,7 @@ const {
   fireEvent,
   waitFor,
   act,
+  cleanup,
 } = require("@testing-library/react-native");
 const { Alert } = require("react-native");
 const App = require("../App").default;
@@ -116,7 +117,11 @@ beforeEach(() => {
   }));
 });
 
-afterEach(() => {
+afterEach(async () => {
+  // RNTL v14 cleanup is async and no longer runs automatically after each
+  // test, so unmount rendered trees explicitly to prevent state and
+  // rendered-output leaking between tests.
+  await cleanup();
   jest.restoreAllMocks();
 });
 
@@ -125,31 +130,31 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 
 describe("App rendering", () => {
-  it("renders the app title", () => {
-    const { getByText } = render(<App />);
+  it("renders the app title", async () => {
+    const { getByText } = await render(<App />);
     expect(getByText("🇨🇭 Swiss TTS Mobile")).toBeTruthy();
   });
 
-  it("renders the TextInput with the default placeholder text", () => {
-    const { getByDisplayValue } = render(<App />);
+  it("renders the TextInput with the default placeholder text", async () => {
+    const { getByDisplayValue } = await render(<App />);
     expect(
       getByDisplayValue("Guten Tag, mein Name ist Abhay Singh."),
     ).toBeTruthy();
   });
 
-  it('renders the "Speak Dialect" button when not loading', () => {
-    const { getByText } = render(<App />);
+  it('renders the "Speak Dialect" button when not loading', async () => {
+    const { getByText } = await render(<App />);
     expect(getByText("Speak Dialect")).toBeTruthy();
   });
 
-  it("renders the section labels", () => {
-    const { getByText } = render(<App />);
+  it("renders the section labels", async () => {
+    const { getByText } = await render(<App />);
     expect(getByText("Input Text (Any Language)")).toBeTruthy();
     expect(getByText("Target Dialect")).toBeTruthy();
   });
 
-  it("does not show ActivityIndicator on initial render", () => {
-    const { queryByTestId, getByText } = render(<App />);
+  it("does not show ActivityIndicator on initial render", async () => {
+    const { queryByTestId, getByText } = await render(<App />);
     // ActivityIndicator has no testID by default; ensure the button exists as a proxy
     expect(queryByTestId("activity-indicator")).toBeFalsy();
     expect(getByText("Speak Dialect")).toBeTruthy();
@@ -162,17 +167,15 @@ describe("App rendering", () => {
 
 describe("generateAndPlayAudio – input validation", () => {
   it('shows "Input Required" alert when text is empty', async () => {
-    const { getByDisplayValue, getByText } = render(<App />);
+    const { getByDisplayValue, getByText } = await render(<App />);
 
     // Clear the text input
-    fireEvent.changeText(
+    await fireEvent.changeText(
       getByDisplayValue("Guten Tag, mein Name ist Abhay Singh."),
       "",
     );
 
-    await act(async () => {
-      fireEvent.press(getByText("Speak Dialect"));
-    });
+    await fireEvent.press(getByText("Speak Dialect"));
 
     expect(Alert.alert).toHaveBeenCalledWith(
       "Input Required",
@@ -182,16 +185,14 @@ describe("generateAndPlayAudio – input validation", () => {
   });
 
   it('shows "Input Required" alert when text contains only whitespace', async () => {
-    const { getByDisplayValue, getByText } = render(<App />);
+    const { getByDisplayValue, getByText } = await render(<App />);
 
-    fireEvent.changeText(
+    await fireEvent.changeText(
       getByDisplayValue("Guten Tag, mein Name ist Abhay Singh."),
       "   ",
     );
 
-    await act(async () => {
-      fireEvent.press(getByText("Speak Dialect"));
-    });
+    await fireEvent.press(getByText("Speak Dialect"));
 
     expect(Alert.alert).toHaveBeenCalledWith(
       "Input Required",
@@ -201,11 +202,9 @@ describe("generateAndPlayAudio – input validation", () => {
   });
 
   it("does not show an alert and proceeds with fetch when text is valid", async () => {
-    const { getByText } = render(<App />);
+    const { getByText } = await render(<App />);
 
-    await act(async () => {
-      fireEvent.press(getByText("Speak Dialect"));
-    });
+    await fireEvent.press(getByText("Speak Dialect"));
 
     expect(Alert.alert).not.toHaveBeenCalledWith(
       "Input Required",
@@ -221,11 +220,9 @@ describe("generateAndPlayAudio – input validation", () => {
 
 describe("generateAndPlayAudio – success path", () => {
   it("sends a POST to the correct endpoint with text and dialect", async () => {
-    const { getByText } = render(<App />);
+    const { getByText } = await render(<App />);
 
-    await act(async () => {
-      fireEvent.press(getByText("Speak Dialect"));
-    });
+    await fireEvent.press(getByText("Speak Dialect"));
 
     expect(globalThis.fetch).toHaveBeenCalledWith(
       `http://${MOCK_API_IP}:8000/api/v1/synthesize`,
@@ -241,11 +238,9 @@ describe("generateAndPlayAudio – success path", () => {
   });
 
   it("creates an Audio.Sound with the constructed audio URL", async () => {
-    const { getByText } = render(<App />);
+    const { getByText } = await render(<App />);
 
-    await act(async () => {
-      fireEvent.press(getByText("Speak Dialect"));
-    });
+    await fireEvent.press(getByText("Speak Dialect"));
 
     await waitFor(() => {
       expect(mockCreateAsync).toHaveBeenCalled();
@@ -266,11 +261,9 @@ describe("generateAndPlayAudio – success path", () => {
     const fixedTime = 1700000000000;
     jest.spyOn(Date, "now").mockReturnValue(fixedTime);
 
-    const { getByText } = render(<App />);
+    const { getByText } = await render(<App />);
 
-    await act(async () => {
-      fireEvent.press(getByText("Speak Dialect"));
-    });
+    await fireEvent.press(getByText("Speak Dialect"));
 
     expect(mockCreateAsync).toHaveBeenCalledWith({
       uri: `http://${MOCK_API_IP}:8000/audio/test.wav?t=${fixedTime}`,
@@ -278,11 +271,9 @@ describe("generateAndPlayAudio – success path", () => {
   });
 
   it("does not show an error alert on successful synthesis", async () => {
-    const { getByText } = render(<App />);
+    const { getByText } = await render(<App />);
 
-    await act(async () => {
-      fireEvent.press(getByText("Speak Dialect"));
-    });
+    await fireEvent.press(getByText("Speak Dialect"));
 
     expect(Alert.alert).not.toHaveBeenCalled();
   });
@@ -300,11 +291,9 @@ describe("generateAndPlayAudio – HTTP error handling", () => {
         makeFetchResponse({ ok: false, status: 503, json: {} }),
       );
 
-    const { getByText } = render(<App />);
+    const { getByText } = await render(<App />);
 
-    await act(async () => {
-      fireEvent.press(getByText("Speak Dialect"));
-    });
+    await fireEvent.press(getByText("Speak Dialect"));
 
     expect(Alert.alert).toHaveBeenCalledWith(
       "Error",
@@ -319,11 +308,9 @@ describe("generateAndPlayAudio – HTTP error handling", () => {
         makeFetchResponse({ ok: false, status: 500, json: {} }),
       );
 
-    const { getByText } = render(<App />);
+    const { getByText } = await render(<App />);
 
-    await act(async () => {
-      fireEvent.press(getByText("Speak Dialect"));
-    });
+    await fireEvent.press(getByText("Speak Dialect"));
 
     expect(Alert.alert).toHaveBeenCalledWith(
       "Error",
@@ -338,11 +325,9 @@ describe("generateAndPlayAudio – HTTP error handling", () => {
         makeFetchResponse({ ok: false, status: 422, json: {} }),
       );
 
-    const { getByText } = render(<App />);
+    const { getByText } = await render(<App />);
 
-    await act(async () => {
-      fireEvent.press(getByText("Speak Dialect"));
-    });
+    await fireEvent.press(getByText("Speak Dialect"));
 
     expect(Alert.alert).toHaveBeenCalledWith(
       "Error",
@@ -357,11 +342,9 @@ describe("generateAndPlayAudio – HTTP error handling", () => {
         makeFetchResponse({ ok: false, status: 400, json: {} }),
       );
 
-    const { getByText } = render(<App />);
+    const { getByText } = await render(<App />);
 
-    await act(async () => {
-      fireEvent.press(getByText("Speak Dialect"));
-    });
+    await fireEvent.press(getByText("Speak Dialect"));
 
     expect(Alert.alert).toHaveBeenCalledWith(
       "Error",
@@ -376,11 +359,9 @@ describe("generateAndPlayAudio – HTTP error handling", () => {
         makeFetchResponse({ ok: false, status: 301, json: {} }),
       );
 
-    const { getByText } = render(<App />);
+    const { getByText } = await render(<App />);
 
-    await act(async () => {
-      fireEvent.press(getByText("Speak Dialect"));
-    });
+    await fireEvent.press(getByText("Speak Dialect"));
 
     expect(Alert.alert).toHaveBeenCalledWith(
       "Error",
@@ -402,11 +383,9 @@ describe("generateAndPlayAudio – JSON parse error", () => {
     };
     globalThis.fetch = jest.fn().mockResolvedValue(badResponse);
 
-    const { getByText } = render(<App />);
+    const { getByText } = await render(<App />);
 
-    await act(async () => {
-      fireEvent.press(getByText("Speak Dialect"));
-    });
+    await fireEvent.press(getByText("Speak Dialect"));
 
     expect(Alert.alert).toHaveBeenCalledWith(
       "Error",
@@ -423,11 +402,9 @@ describe("generateAndPlayAudio – audio playback error", () => {
   it("shows audio playback error message when Audio.Sound.playAsync throws", async () => {
     mockPlayAsync.mockRejectedValue(new Error("Could not load audio"));
 
-    const { getByText } = render(<App />);
+    const { getByText } = await render(<App />);
 
-    await act(async () => {
-      fireEvent.press(getByText("Speak Dialect"));
-    });
+    await fireEvent.press(getByText("Speak Dialect"));
 
     expect(Alert.alert).toHaveBeenCalledWith(
       "Error",
@@ -446,11 +423,9 @@ describe("generateAndPlayAudio – network errors", () => {
     try {
       delete process.env.EXPO_PUBLIC_API_IP;
 
-      const { getByText } = render(<App />);
+      const { getByText } = await render(<App />);
 
-      await act(async () => {
-        fireEvent.press(getByText("Speak Dialect"));
-      });
+      await fireEvent.press(getByText("Speak Dialect"));
 
       // API_IP is captured once at module load time, so deleting the env
       // var afterwards has no effect on the already-running app.
@@ -465,11 +440,9 @@ describe("generateAndPlayAudio – network errors", () => {
     const networkError = new Error("Network request failed");
     globalThis.fetch = jest.fn().mockRejectedValue(networkError);
 
-    const { getByText } = render(<App />);
+    const { getByText } = await render(<App />);
 
-    await act(async () => {
-      fireEvent.press(getByText("Speak Dialect"));
-    });
+    await fireEvent.press(getByText("Speak Dialect"));
 
     expect(Alert.alert).toHaveBeenCalledWith(
       "Error",
@@ -481,11 +454,9 @@ describe("generateAndPlayAudio – network errors", () => {
     const typeError = new TypeError("Failed to fetch");
     globalThis.fetch = jest.fn().mockRejectedValue(typeError);
 
-    const { getByText } = render(<App />);
+    const { getByText } = await render(<App />);
 
-    await act(async () => {
-      fireEvent.press(getByText("Speak Dialect"));
-    });
+    await fireEvent.press(getByText("Speak Dialect"));
 
     expect(Alert.alert).toHaveBeenCalledWith(
       "Error",
@@ -497,11 +468,9 @@ describe("generateAndPlayAudio – network errors", () => {
     const unknownError = new Error("Something completely unexpected");
     globalThis.fetch = jest.fn().mockRejectedValue(unknownError);
 
-    const { getByText } = render(<App />);
+    const { getByText } = await render(<App />);
 
-    await act(async () => {
-      fireEvent.press(getByText("Speak Dialect"));
-    });
+    await fireEvent.press(getByText("Speak Dialect"));
 
     expect(Alert.alert).toHaveBeenCalledWith(
       "Error",
@@ -516,11 +485,9 @@ describe("generateAndPlayAudio – network errors", () => {
 
 describe("generateAndPlayAudio – loading state", () => {
   it("resets loading to false after a successful request", async () => {
-    const { getByText } = render(<App />);
+    const { getByText } = await render(<App />);
 
-    await act(async () => {
-      fireEvent.press(getByText("Speak Dialect"));
-    });
+    await fireEvent.press(getByText("Speak Dialect"));
 
     // Button should be visible again after loading finishes
     await waitFor(() => {
@@ -533,11 +500,9 @@ describe("generateAndPlayAudio – loading state", () => {
       .fn()
       .mockRejectedValue(new Error("Network request failed"));
 
-    const { getByText } = render(<App />);
+    const { getByText } = await render(<App />);
 
-    await act(async () => {
-      fireEvent.press(getByText("Speak Dialect"));
-    });
+    await fireEvent.press(getByText("Speak Dialect"));
 
     await waitFor(() => {
       expect(getByText("Speak Dialect")).toBeTruthy();
@@ -551,33 +516,27 @@ describe("generateAndPlayAudio – loading state", () => {
 
 describe("generateAndPlayAudio – sound resource management", () => {
   it("unloads the previously loaded sound before creating a new one", async () => {
-    const { getByText } = render(<App />);
+    const { getByText } = await render(<App />);
 
     // First press – loads the first sound
-    await act(async () => {
-      fireEvent.press(getByText("Speak Dialect"));
-    });
+    await fireEvent.press(getByText("Speak Dialect"));
 
     expect(mockUnloadAsync).not.toHaveBeenCalled();
 
     // Second press – should unload the first sound before loading the second
-    await act(async () => {
-      fireEvent.press(getByText("Speak Dialect"));
-    });
+    await fireEvent.press(getByText("Speak Dialect"));
 
     expect(mockUnloadAsync).toHaveBeenCalledTimes(1);
   });
 
   it("unloads the active sound when the component unmounts", async () => {
-    const { getByText, unmount } = render(<App />);
+    const { getByText, unmount } = await render(<App />);
 
-    await act(async () => {
-      fireEvent.press(getByText("Speak Dialect"));
-    });
+    await fireEvent.press(getByText("Speak Dialect"));
 
     expect(mockUnloadAsync).not.toHaveBeenCalled();
 
-    unmount();
+    await unmount();
 
     expect(mockUnloadAsync).toHaveBeenCalledTimes(1);
   });
@@ -589,25 +548,23 @@ describe("generateAndPlayAudio – sound resource management", () => {
 
 describe("App state management", () => {
   it("updates text state when the TextInput value changes", async () => {
-    const { getByDisplayValue } = render(<App />);
+    const { getByDisplayValue } = await render(<App />);
     const input = getByDisplayValue("Guten Tag, mein Name ist Abhay Singh.");
 
-    fireEvent.changeText(input, "Hello, world!");
+    await fireEvent.changeText(input, "Hello, world!");
 
     expect(getByDisplayValue("Hello, world!")).toBeTruthy();
   });
 
   it("sends the updated text to the API after text input change", async () => {
-    const { getByDisplayValue, getByText } = render(<App />);
+    const { getByDisplayValue, getByText } = await render(<App />);
 
-    fireEvent.changeText(
+    await fireEvent.changeText(
       getByDisplayValue("Guten Tag, mein Name ist Abhay Singh."),
       "Wie geht es Ihnen?",
     );
 
-    await act(async () => {
-      fireEvent.press(getByText("Speak Dialect"));
-    });
+    await fireEvent.press(getByText("Speak Dialect"));
 
     expect(globalThis.fetch).toHaveBeenCalledWith(
       expect.any(String),
@@ -618,11 +575,9 @@ describe("App state management", () => {
   });
 
   it('uses the default dialect "zurich" in the request', async () => {
-    const { getByText } = render(<App />);
+    const { getByText } = await render(<App />);
 
-    await act(async () => {
-      fireEvent.press(getByText("Speak Dialect"));
-    });
+    await fireEvent.press(getByText("Speak Dialect"));
 
     expect(globalThis.fetch).toHaveBeenCalledWith(
       expect.any(String),
@@ -633,15 +588,13 @@ describe("App state management", () => {
   });
 
   it("sends the selected dialect to the API after Picker value changes", async () => {
-    const { getByTestId, getByText } = render(<App />);
+    const { getByTestId, getByText } = await render(<App />);
 
     // Simulate the Picker's onValueChange firing with "bern"
     const picker = getByTestId("picker");
-    fireEvent(picker, "onValueChange", "bern");
+    await fireEvent(picker, "onValueChange", "bern");
 
-    await act(async () => {
-      fireEvent.press(getByText("Speak Dialect"));
-    });
+    await fireEvent.press(getByText("Speak Dialect"));
 
     expect(globalThis.fetch).toHaveBeenCalledWith(
       expect.any(String),
@@ -655,14 +608,12 @@ describe("App state management", () => {
   });
 
   it("sends the selected dialect to the API when switching to basel", async () => {
-    const { getByTestId, getByText } = render(<App />);
+    const { getByTestId, getByText } = await render(<App />);
 
     const picker = getByTestId("picker");
-    fireEvent(picker, "onValueChange", "basel");
+    await fireEvent(picker, "onValueChange", "basel");
 
-    await act(async () => {
-      fireEvent.press(getByText("Speak Dialect"));
-    });
+    await fireEvent.press(getByText("Speak Dialect"));
 
     expect(globalThis.fetch).toHaveBeenCalledWith(
       expect.any(String),
@@ -682,16 +633,14 @@ describe("App state management", () => {
 
 describe("generateAndPlayAudio – boundary and regression cases", () => {
   it("treats a single space as invalid (whitespace-only) input", async () => {
-    const { getByDisplayValue, getByText } = render(<App />);
+    const { getByDisplayValue, getByText } = await render(<App />);
 
-    fireEvent.changeText(
+    await fireEvent.changeText(
       getByDisplayValue("Guten Tag, mein Name ist Abhay Singh."),
       " ",
     );
 
-    await act(async () => {
-      fireEvent.press(getByText("Speak Dialect"));
-    });
+    await fireEvent.press(getByText("Speak Dialect"));
 
     expect(Alert.alert).toHaveBeenCalledWith(
       "Input Required",
@@ -706,11 +655,9 @@ describe("generateAndPlayAudio – boundary and regression cases", () => {
         makeFetchResponse({ ok: false, status: 404, json: {} }),
       );
 
-    const { getByText } = render(<App />);
+    const { getByText } = await render(<App />);
 
-    await act(async () => {
-      fireEvent.press(getByText("Speak Dialect"));
-    });
+    await fireEvent.press(getByText("Speak Dialect"));
 
     expect(Alert.alert).toHaveBeenCalledWith(
       "Error",
@@ -725,11 +672,9 @@ describe("generateAndPlayAudio – boundary and regression cases", () => {
         makeFetchResponse({ ok: false, status: 500, json: {} }),
       );
 
-    const { getByText } = render(<App />);
+    const { getByText } = await render(<App />);
 
-    await act(async () => {
-      fireEvent.press(getByText("Speak Dialect"));
-    });
+    await fireEvent.press(getByText("Speak Dialect"));
 
     expect(mockCreateAsync).not.toHaveBeenCalled();
   });
@@ -741,11 +686,9 @@ describe("generateAndPlayAudio – boundary and regression cases", () => {
       json: jest.fn().mockRejectedValue(new SyntaxError("bad json")),
     });
 
-    const { getByText } = render(<App />);
+    const { getByText } = await render(<App />);
 
-    await act(async () => {
-      fireEvent.press(getByText("Speak Dialect"));
-    });
+    await fireEvent.press(getByText("Speak Dialect"));
 
     expect(mockCreateAsync).not.toHaveBeenCalled();
   });
@@ -755,11 +698,9 @@ describe("generateAndPlayAudio – boundary and regression cases", () => {
       .fn()
       .mockRejectedValue(new Error("Network request failed"));
 
-    const { getByText } = render(<App />);
+    const { getByText } = await render(<App />);
 
-    await act(async () => {
-      fireEvent.press(getByText("Speak Dialect"));
-    });
+    await fireEvent.press(getByText("Speak Dialect"));
 
     expect(Alert.alert).toHaveBeenCalledTimes(1);
   });
@@ -795,24 +736,26 @@ describe("Additional App coverage", () => {
         }),
     );
 
-    const { getByText, queryByText } = render(<App />);
+    const { getByText, queryByText } = await render(<App />);
 
-    await act(async () => {
-      fireEvent.press(getByText("Speak Dialect"));
-    });
+    // Do NOT await the press: fetch is held open deliberately, so awaiting the
+    // v14 fireEvent (which flushes pending async work) would deadlock. Firing
+    // without awaiting lets us observe the transient loading state.
+    const pressPromise = fireEvent.press(getByText("Speak Dialect"));
 
     // Button should disappear while loading
-    expect(queryByText("Speak Dialect")).toBeFalsy();
-
-    await act(async () => {
-      resolveFetch(
-        makeFetchResponse({
-          ok: true,
-          status: 200,
-          json: { audio_url: "/audio/loading.wav" },
-        }),
-      );
+    await waitFor(() => {
+      expect(queryByText("Speak Dialect")).toBeFalsy();
     });
+
+    resolveFetch(
+      makeFetchResponse({
+        ok: true,
+        status: 200,
+        json: { audio_url: "/audio/loading.wav" },
+      }),
+    );
+    await pressPromise;
 
     await waitFor(() => {
       expect(getByText("Speak Dialect")).toBeTruthy();
@@ -824,17 +767,13 @@ describe("Additional App coverage", () => {
       .mockResolvedValueOnce(undefined)
       .mockRejectedValueOnce(new Error("audio failed"));
 
-    const { getByText } = render(<App />);
+    const { getByText } = await render(<App />);
 
     // First synthesis
-    await act(async () => {
-      fireEvent.press(getByText("Speak Dialect"));
-    });
+    await fireEvent.press(getByText("Speak Dialect"));
 
     // Second synthesis
-    await act(async () => {
-      fireEvent.press(getByText("Speak Dialect"));
-    });
+    await fireEvent.press(getByText("Speak Dialect"));
 
     expect(mockUnloadAsync).toHaveBeenCalledTimes(1);
 
@@ -851,11 +790,9 @@ describe("Additional App coverage", () => {
       json: jest.fn().mockResolvedValue({}),
     });
 
-    const { getByText } = render(<App />);
+    const { getByText } = await render(<App />);
 
-    await act(async () => {
-      fireEvent.press(getByText("Speak Dialect"));
-    });
+    await fireEvent.press(getByText("Speak Dialect"));
 
     expect(mockCreateAsync).toHaveBeenCalledWith({
       uri: expect.stringContaining("undefined"),
@@ -873,11 +810,9 @@ describe("Additional App coverage", () => {
       }),
     );
 
-    const { getByText } = render(<App />);
+    const { getByText } = await render(<App />);
 
-    await act(async () => {
-      fireEvent.press(getByText("Speak Dialect"));
-    });
+    await fireEvent.press(getByText("Speak Dialect"));
 
     expect(Alert.alert).toHaveBeenCalledWith(
       "Error",
@@ -888,18 +823,16 @@ describe("Additional App coverage", () => {
   it("supports large text input payloads", async () => {
     const longText = "Swiss German translation test ".repeat(100);
 
-    const { getByDisplayValue, getByText } = render(<App />);
+    const { getByDisplayValue, getByText } = await render(<App />);
 
-    fireEvent.changeText(
+    await fireEvent.changeText(
       getByDisplayValue("Guten Tag, mein Name ist Abhay Singh."),
       longText,
     );
 
     expect(getByDisplayValue(longText)).toBeTruthy();
 
-    await act(async () => {
-      fireEvent.press(getByText("Speak Dialect"));
-    });
+    await fireEvent.press(getByText("Speak Dialect"));
 
     expect(globalThis.fetch).toHaveBeenCalledWith(
       expect.any(String),

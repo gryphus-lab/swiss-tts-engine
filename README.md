@@ -1,75 +1,76 @@
 # Swiss TTS Engine
 
-A monorepo for a Swiss German text-to-speech system that translates arbitrary input text into Swiss German dialects, synthesizes speech with an ESPnet model, and exposes the result through a FastAPI backend and a React Native / Expo client.
+A monorepo for a Swiss German text-to-speech pipeline that translates arbitrary text into Swiss German dialects, synthesizes speech with an ESPnet model, and exposes the result through a FastAPI backend and a React Native / Expo client.
 
-## What it does
+## Overview
 
-This project turns standard text into local Swiss German audio in three steps:
+The project turns standard text into local Swiss German audio in three steps:
 
-1. Translate the input into a dialect-specific phonetic Swiss German variant using a local Ollama-backed LLM.
-2. Generate WAV audio with an ESPnet TTS model.
+1. Translate the input into a dialect-specific phonetic Swiss German variant through a local Ollama-backed language model.
+2. Generate `.wav` output with an ESPnet TTS model.
 3. Serve the result through a REST API and play it back in the mobile app.
 
-The system currently supports these dialects:
+Supported dialects:
 
 - Zurich
 - Bern
 - Basel
+
+## Recent updates
+
+- Added lazy backend startup with background model loading so the API responds immediately while ESPnet and Ollama initialization runs in the background.
+- Added health checks for the translator backend, including availability and model detection checks.
+- Added automatic Ollama model recovery when the configured model is missing.
+- Added dialect validation and safer audio serving with path traversal guards.
+- Added Expo app configuration using `EXPO_PUBLIC_API_IP` and a timestamp cache-buster on audio URLs.
+- Added repo-level orchestration via `mise` for setup, testing, Docker, and generation tasks.
 
 ## Tech stack
 
 ### Backend
 
 - Python 3.12+
-- FastAPI for the REST API
-- ESPnet and espnet-model-zoo for speech synthesis
-- PyTorch / torchaudio for inference
+- FastAPI
+- ESPnet + espnet-model-zoo
+- PyTorch / torchaudio
 - OpenAI Python client pointed to a local Ollama endpoint
-- SoundFile + NumPy for audio I/O
+- SoundFile + NumPy
 
 ### Mobile app
 
 - Expo / React Native
-- React Native Picker for dialect selection
-- expo-av and expo-file-system for audio playback and local file handling
-- Jest + React Native Testing Library for frontend tests
+- `@react-native-picker/picker` for dialect selection
+- `expo-av` for playback
+- `expo-file-system` and local file handling
+- Jest + React Native Testing Library
 
 ### Tooling
 
-- uv for Python dependency management
-- npm for the app front end
-- mise for project tasks and orchestration
-- Docker Compose for full-stack local deployment
+- `uv` for Python dependencies and project environment management
+- `npm` for the Expo app
+- `mise` for local task orchestration
+- Docker Compose for local full-stack deployment
 
-## Solution architecture
+## Architecture
 
 ```text
 User text
    ↓
 DialectTranslator
    └─ local Ollama / OpenAI-compatible endpoint (gemma3:1b by default)
-         ↓ "phonetic Swiss German text"
+         ↓ phonetic Swiss German text
 SwissTTSEngine
    └─ ESPnet TTS model download + CPU inference
-         ↓ generated .wav
+         ↓ generated WAV file
 FastAPI API
    ├─ /health
    ├─ /api/v1/synthesize
-   └─ /api/v1/audio/{filename}
+   ├─ /api/v1/audio/{filename}
+   └─ /
          ↓
-Expo / React Native mobile app
+Expo / React Native app
    └─ plays returned audio
 ```
-
-## Main functionalities
-
-- Translate input text into Swiss German dialect speech form
-- Generate dialect-specific speech files in the `audio_output/` directory
-- Expose a health endpoint and a synthesis endpoint for clean service integration
-- Return audio URLs that are served securely from the backend
-- Support local batch generation for multiple dialects in one run
-- Provide a mobile UI for entering text, choosing a dialect, and playing the result
-- Run both backend and frontend together with Docker Compose
 
 ## Repository layout
 
@@ -93,6 +94,8 @@ Expo / React Native mobile app
 │       ├── package.json
 │       └── README/docs files
 ├── audio_output/
+├── .github/
+├── components/
 ├── docker-compose.yml
 ├── Dockerfile
 ├── dev.sh
@@ -101,16 +104,19 @@ Expo / React Native mobile app
 ├── pytest.ini
 ├── README.md
 ├── sonar-project.properties
-└── uv.lock
+├── uv.lock
+└── .env.example (if present in your local setup)
 ```
 
 ## Prerequisites
 
 - Python 3.12+
-- Node.js / npm
-- uv
+- Node.js and npm
+- `uv`
 - Docker (optional, for full-stack local deployment)
 - Local Ollama instance running at `http://localhost:11434/v1` by default
+
+### Configure environment variables
 
 If Ollama is running elsewhere, set:
 
@@ -118,7 +124,16 @@ If Ollama is running elsewhere, set:
 export OLLAMA_URL=http://your-host:11434/v1
 ```
 
-For the Expo app, set the backend origin (without a path), for example:
+Optional translator settings:
+
+```bash
+export OLLAMA_MODEL=gemma3:1b
+export OLLAMA_API_KEY=ollama
+export OLLAMA_TIMEOUT=30
+export OLLAMA_TEMPERATURE=0.3
+```
+
+For the Expo app, set the backend origin without a path:
 
 ```bash
 export EXPO_PUBLIC_API_IP=http://192.168.1.10
@@ -128,7 +143,7 @@ The app appends `:8000/api/v1/synthesize` to this origin before each request.
 
 ## Quick start
 
-Install all dependencies:
+Install everything with the repo helper:
 
 ```bash
 mise run setup
@@ -143,10 +158,16 @@ npm install --prefix apps/swiss-tts-app
 
 ## Run the backend
 
-Start the text-to-speech generation pipeline directly:
+Generate speech directly from the CLI pipeline:
 
 ```bash
 mise run generate
+```
+
+Equivalent direct command:
+
+```bash
+uv run --package swiss-tts-engine python -m swiss_tts.main
 ```
 
 Start the FastAPI service:
@@ -155,10 +176,10 @@ Start the FastAPI service:
 uv run --package swiss-tts-engine uvicorn swiss_tts.api:app --reload --port 8000
 ```
 
-The backend serves a small HTML frontend from `apps/swiss-tts-engine/public/index.html` and exposes the following HTTP endpoints:
+The backend serves a small HTML frontend from `apps/swiss-tts-engine/public/index.html` and exposes the following endpoints:
 
-- `GET /health` — checks if the engine, Ollama endpoint, and configured translator model are ready
-- `POST /api/v1/synthesize` — accepts `{ text, dialect }` and returns a generated audio URL
+- `GET /health` — checks whether the engine and translator are ready
+- `POST /api/v1/synthesize` — accepts `{ text, dialect }` and returns generated audio metadata plus an audio URL
 - `GET /api/v1/audio/{filename}` — serves generated WAV files
 - `GET /` — serves the local frontend page
 
@@ -168,6 +189,17 @@ Example request:
 curl -X POST http://localhost:8000/api/v1/synthesize \
   -H 'Content-Type: application/json' \
   -d '{"text":"Guten Tag, mein Name ist Abhay Singh.","dialect":"zurich"}'
+```
+
+Example response:
+
+```json
+{
+  "status": "success",
+  "dialect": "zurich",
+  "translated_text": "...",
+  "audio_url": "/api/v1/audio/zurich_speech.wav"
+}
 ```
 
 ## Run the mobile app
@@ -202,6 +234,8 @@ mise run docker-compose
 
 The API is exposed on port `8000` and the Expo app on port `8081`.
 
+The Docker setup also uses the `espnet_model_cache` volume so the ESPnet model is reused and not re-downloaded on each restart.
+
 ## Testing
 
 Run the full configured test suites:
@@ -222,6 +256,13 @@ Run only mobile tests:
 npm run test --prefix apps/swiss-tts-app
 ```
 
+Run lint/format checks:
+
+```bash
+mise run lint
+mise run format
+```
+
 ## Notes and gotchas
 
 - The backend loads the ESPnet model and translator lazily in a background thread so the API starts quickly.
@@ -229,8 +270,10 @@ npm run test --prefix apps/swiss-tts-app
 - The backend validates the requested dialect against the supported list in `config.py`.
 - Audio files are written into `audio_output/` and served back to clients.
 - The translator is intentionally phonetic: numbers are spelled out as words to make generated speech more natural for TTS.
+- The front end requires `EXPO_PUBLIC_API_IP` to be set before launch; otherwise it throws at module load.
+- The local Ollama endpoint is expected to be reachable from the backend; if the model is missing, the code attempts a local `ollama pull` when possible.
 
-## Common project commands
+## Common commands
 
 ```bash
 mise run setup
@@ -241,4 +284,6 @@ mise run format
 mise run check
 ```
 
-The project is designed as a lightweight local Swiss German speech pipeline with a strong emphasis on dialect-aware translation and easy local orchestration.
+## Project intent
+
+This repository is a lightweight local Swiss German speech pipeline with a strong emphasis on dialect-aware translation, CPU-based speech synthesis, and straightforward local orchestration for development and demos.

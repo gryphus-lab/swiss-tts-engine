@@ -56,9 +56,14 @@ run = ["npm run format --prefix apps/swiss-tts-app", "uv run ruff format ."]
 description = "Run linting and tests"
 run = "uv run ruff check . && uv run --package swiss-tts-engine pytest apps/swiss-tts-engine/tests"
 
+[tasks.version-check]
+description = "Fail if the semantic version drifts across pyproject / package.json / app.json"
+run = "uv run python scripts/check_version.py"
+
 [tasks.test]
 description = "Run the test suites"
 run = [
+  "uv run python scripts/check_version.py",
   "uv run --package swiss-tts-engine pytest apps/swiss-tts-engine/tests --cov=swiss_tts --cov-report=xml:coverage.xml",
   "npm run test --prefix apps/swiss-tts-app",
 ]

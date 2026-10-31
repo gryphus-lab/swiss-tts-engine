@@ -2,6 +2,8 @@ import logging
 import os
 import threading
 from contextlib import asynccontextmanager
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as _pkg_version
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
@@ -12,6 +14,23 @@ from swiss_tts.main import SwissTTSEngine
 from swiss_tts.translator import DialectTranslator
 
 logger = logging.getLogger(__name__)
+
+
+def _engine_version() -> str:
+    """Resolve the semantic version from installed package metadata.
+
+    Single source of truth is the version in the package's pyproject.toml;
+    reading it here lets the running API self-identify (shown in /docs and the
+    OpenAPI schema, and returned by /health). Falls back gracefully when the
+    package isn't installed as distribution metadata (e.g. ad-hoc runs).
+    """
+    try:
+        return _pkg_version("swiss-tts-engine")
+    except PackageNotFoundError:  # pragma: no cover - dev/editable edge case
+        return "0.0.0+unknown"
+
+
+APP_VERSION = _engine_version()
 
 # Global state for our models so they persist across requests
 models = {}
@@ -44,6 +63,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Swiss TTS Engine API",
     description="REST API for translating and synthesizing Swiss German audio.",
+    version=APP_VERSION,
     lifespan=lifespan,
 )
 
@@ -103,6 +123,7 @@ def health_check():
     return {
         "status": "ready",
         "message": "All models loaded and ready.",
+        "version": APP_VERSION,
         "translator": translator_status,
     }
 

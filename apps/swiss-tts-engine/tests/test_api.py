@@ -108,6 +108,7 @@ def test_health_check_ready_when_models_present():
     assert result == {
         "status": "ready",
         "message": "All models loaded and ready.",
+        "version": api.APP_VERSION,
         "translator": {
             "status": "ready",
             "model": "gemma3:1b",

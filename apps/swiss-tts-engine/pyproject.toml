@@ -1,7 +1,7 @@
 [project]
 name = "swiss-tts-engine"
 # Kept in sync with the monorepo version (see /VERSIONING.md, scripts/check_version.py).
-version = "1.7.84"
+version = "1.7.85"
 description = "A multi-dialect Swiss German text-to-speech engine built on ESPnet."
 readme = "README.md"
 requires-python = ">=3.12"

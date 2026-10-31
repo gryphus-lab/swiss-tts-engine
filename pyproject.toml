@@ -2,7 +2,7 @@
 name = "swiss-tts-monorepo"
 # Single source of truth for the project's semantic version. See VERSIONING.md.
 # Keep in sync with apps/swiss-tts-app/{package.json,app.json} (scripts/check_version.py).
-version = "1.7.82"
+version = "1.7.83"
 description = "Monorepo for Swiss German text-to-speech applications and components."
 readme = "README.md"
 requires-python = ">=3.12"

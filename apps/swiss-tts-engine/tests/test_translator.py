@@ -350,7 +350,9 @@ def test_pull_model_recovery_is_unavailable_for_unsupported_url(monkeypatch):
     monkeypatch.setattr(translator, "OpenAI", lambda **kwargs: object())
     instance = DialectTranslator()
 
-    with pytest.raises(RuntimeError, match="Automatic Ollama model recovery is unavailable"):
+    with pytest.raises(
+        RuntimeError, match="Automatic Ollama model recovery is unavailable"
+    ):
         instance._pull_model_if_missing()
 
 

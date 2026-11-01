@@ -92,7 +92,9 @@ def main() -> int:
         return 1
 
     (semver,) = versions
-    print(f"✓ version consistent: {semver} (versionCode {expected_version_code(semver)})")
+    print(
+        f"✓ version consistent: {semver} (versionCode {expected_version_code(semver)})"
+    )
     return 0
 
 

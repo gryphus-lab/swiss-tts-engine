@@ -75,4 +75,4 @@ The seven MINOR features, in merge order:
 After those, 76 of the 122 patch-level PRs were merged, landing the patch
 component at **76**.
 
-**Current version: `1.7.87`** (`versionCode 1070087`).
+**Current version: `1.7.88`** (`versionCode 1070088`).

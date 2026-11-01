@@ -131,7 +131,9 @@ def test_health_check_returns_unavailable_when_ollama_is_unreachable():
         api.health_check()
 
     assert exc.value.status_code == 503
-    assert exc.value.detail["translator"]["message"] == "Ollama endpoint is unreachable."
+    assert (
+        exc.value.detail["translator"]["message"] == "Ollama endpoint is unreachable."
+    )
 
 
 def test_synthesize_raises_for_model_loading_error():

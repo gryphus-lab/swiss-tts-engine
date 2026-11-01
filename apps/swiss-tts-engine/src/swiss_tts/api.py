@@ -170,9 +170,7 @@ def synthesize_speech(request: TTSRequest):
             text=final_text, dialect_name=request.dialect
         )
     except Exception as e:  # noqa: BLE001 - synthesis errors are converted to API responses
-        raise HTTPException(
-            status_code=500, detail=f"Audio generation failed: {e!s}"
-        )
+        raise HTTPException(status_code=500, detail=f"Audio generation failed: {e!s}")
 
     filename = os.path.basename(output_path)
 

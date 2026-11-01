@@ -1,13 +1,13 @@
 {
   "name": "swiss-tts-app",
-  "version": "1.7.85",
+  "version": "1.7.88",
   "main": "index.js",
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
     "build:android:preview:local": "eas build -p android --profile preview --local",
-    "lint": "prettier --check .",
-    "format": "prettier --write .",
+    "lint": "prettier --check . --ignore-path .gitignore --ignore-path ../../.gitignore",
+    "format": "prettier --write . --ignore-path .gitignore --ignore-path ../../.gitignore",
     "test": "jest --coverage"
   },
   "dependencies": {

@@ -2,16 +2,16 @@
   "expo": {
     "name": "swiss-tts-app",
     "slug": "swiss-tts-app",
-    "version": "1.7.85",
+    "version": "1.7.88",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "buildNumber": "1070085"
+      "buildNumber": "1070088"
     },
     "android": {
-      "versionCode": 1070085,
+      "versionCode": 1070088,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",

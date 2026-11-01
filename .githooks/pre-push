@@ -1,0 +1,25 @@
+#!/bin/sh
+set -eu
+
+remote=${1:?Git remote name is required}
+target_ref="refs/remotes/$remote/main"
+
+if ! git rev-parse --verify --quiet "$target_ref" >/dev/null; then
+  echo "pre-push: cannot find $target_ref; fetch the remote main branch and retry." >&2
+  exit 1
+fi
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  case "$local_ref:$remote_ref" in
+    refs/heads/*:refs/heads/*)
+      uv run python scripts/check_version.py \
+        --from-ref "$local_sha" \
+        --against-ref "$target_ref"
+      exit $?
+      ;;
+    *)
+      ;;
+  esac
+done
+
+exit 0

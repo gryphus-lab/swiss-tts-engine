@@ -11,7 +11,7 @@ drift.
 ## Version surfaces
 
 | File | Field | Purpose |
-|------|-------|---------|
+| ------ | ------- | --------- |
 | `pyproject.toml` | `project.version` | monorepo |
 | `apps/swiss-tts-engine/pyproject.toml` | `project.version` | engine package — read back by the FastAPI app so the running API self-identifies (OpenAPI/`/docs` + `/health`) |
 | `apps/swiss-tts-app/package.json` | `version` | Expo app (npm) |
@@ -30,7 +30,7 @@ Bump the version on every change merged to `main`, by the highest-impact change
 in the PR:
 
 | Change | Bump | Example |
-|--------|------|---------|
+| -------- | ------ | --------- |
 | Breaking — removed/renamed API route, response-shape break, incompatible model change | **MAJOR** | `feat!:` / `BREAKING CHANGE:` |
 | New backward-compatible capability | **MINOR** | REST API, web UI, Expo app, EAS/APK build config |
 | Bug fix, build/CI/config, refactor, chore, docs, generated tests | **PATCH** | `fix:`, lint/format, CI, README |
@@ -63,7 +63,7 @@ are **PATCH**.
 The seven MINOR features, in merge order:
 
 | PR | Feature | Version |
-|----|---------|---------|
+| ---- | --------- | --------- |
 | #5 | Hochdeutsch input before audio generation | 1.1.0 |
 | #6 | Dockerized REST API endpoints | 1.2.0 |
 | #11 | Web UI for basic functionality | 1.3.0 |

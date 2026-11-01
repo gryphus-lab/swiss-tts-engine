@@ -134,7 +134,9 @@ def test_default_fallback_texts_basel_is_string():
 def test_default_fallback_texts_all_values_non_empty():
     """All fallback text values should be non-empty strings."""
     for dialect, text in config.DEFAULT_FALLBACK_TEXTS.items():
-        assert isinstance(text, str), f"Dialect '{dialect}' has non-string fallback text"
+        assert isinstance(text, str), (
+            f"Dialect '{dialect}' has non-string fallback text"
+        )
         assert text.strip(), f"Dialect '{dialect}' has empty fallback text"
 
 

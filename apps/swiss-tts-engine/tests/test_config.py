@@ -53,7 +53,8 @@ def test_load_texts_from_json_prefers_root_texts_json(tmp_path, monkeypatch):
 
         def resolve(self):
             class Resolved:
-                parents = [None, None, repo_root]
+                def __init__(self):
+                    self.parents = [None, None, repo_root]
 
             return Resolved()
 
@@ -74,7 +75,8 @@ def test_load_texts_from_json_reads_config_texts_json(tmp_path, monkeypatch):
 
         def resolve(self):
             class Resolved:
-                parents = [None, None, repo_root]
+                def __init__(self):
+                    self.parents = [None, None, repo_root]
 
             return Resolved()
 
@@ -101,7 +103,8 @@ def test_default_texts_loads_json_when_available(monkeypatch, tmp_path):
 
         def resolve(self):
             class Resolved:
-                parents = [None, None, repo_root]
+                def __init__(self):
+                    self.parents = [None, None, repo_root]
 
             return Resolved()
 
@@ -124,15 +127,15 @@ def test_default_fallback_texts_contains_all_dialects():
 def test_default_fallback_texts_basel_is_string():
     """The 'basel' entry (which had trailing comma added) should be a non-empty string."""
     value = config.DEFAULT_FALLBACK_TEXTS["basel"]
-    assert isinstance(value, str) and value.strip()
+    assert isinstance(value, str)
+    assert value.strip()
 
 
 def test_default_fallback_texts_all_values_non_empty():
     """All fallback text values should be non-empty strings."""
     for dialect, text in config.DEFAULT_FALLBACK_TEXTS.items():
-        assert isinstance(text, str) and text.strip(), (
-            f"Dialect '{dialect}' has empty or non-string fallback text"
-        )
+        assert isinstance(text, str), f"Dialect '{dialect}' has non-string fallback text"
+        assert text.strip(), f"Dialect '{dialect}' has empty fallback text"
 
 
 def test_normalize_text_value_empty_list():
@@ -224,7 +227,8 @@ def test_load_texts_from_json_returns_none_when_no_candidates(tmp_path, monkeypa
 
         def resolve(self):
             class Resolved:
-                parents = [None, None, empty_root]
+                def __init__(self):
+                    self.parents = [None, None, empty_root]
 
             return Resolved()
 
@@ -247,7 +251,8 @@ def test_load_texts_from_json_falls_back_to_config_dir(tmp_path, monkeypatch):
 
         def resolve(self):
             class Resolved:
-                parents = [None, None, repo_root]
+                def __init__(self):
+                    self.parents = [None, None, repo_root]
 
             return Resolved()
 
@@ -271,7 +276,8 @@ def test_load_texts_from_json_skips_invalid_json_and_falls_back(tmp_path, monkey
 
         def resolve(self):
             class Resolved:
-                parents = [None, None, repo_root]
+                def __init__(self):
+                    self.parents = [None, None, repo_root]
 
             return Resolved()
 

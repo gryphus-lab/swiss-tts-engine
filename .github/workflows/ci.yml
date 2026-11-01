@@ -12,6 +12,8 @@ permissions:
 jobs:
   build-and-scan:
     runs-on: ubuntu-latest
+    env:
+      SONAR_ENABLED: ${{ secrets.SONAR_TOKEN != '' && 'true' || 'false' }}
 
     steps:
       - name: Checkout
@@ -23,10 +25,14 @@ jobs:
         uses: jdx/mise-action@e6a8b3978addb5a52f2b4cd9d91eafa7f0ab959d
       - name: Install dependencies
         run: mise run setup
+
+      - name: Run linter
+        run: mise run lint
       - name: Run tests
         run: mise run test
 
       - name: SonarQube Scan
+        if: ${{ env.SONAR_ENABLED == 'true' }}
         uses: SonarSource/sonarqube-scan-action@7006c4492b2e0ee0f816d36501671557c97f5995 # v8.1.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

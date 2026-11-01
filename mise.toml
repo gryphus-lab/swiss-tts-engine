@@ -33,7 +33,11 @@ echo "Virtual env: $VIRTUAL_ENV"
 # Dependency management
 [tasks.setup]
 description = "Install dependencies and create the local virtual environment"
-run = ["uv sync --all-packages", "npm install --prefix apps/swiss-tts-app"]
+run = [
+  "uv sync --all-packages",
+  "npm install --prefix apps/swiss-tts-app",
+  "git config core.hooksPath .githooks",
+]
 
 [tasks.add]
 description = "Add a new dependency to the project"
@@ -59,6 +63,18 @@ run = "uv run ruff check . && uv run --package swiss-tts-engine pytest apps/swis
 [tasks.version-check]
 description = "Fail if the semantic version drifts across pyproject / package.json / app.json"
 run = "uv run python scripts/check_version.py"
+
+[tasks.version-major]
+description = "Bump the semantic version to the next major release"
+run = "uv run python scripts/bump_version.py major"
+
+[tasks.version-minor]
+description = "Bump the semantic version to the next minor release"
+run = "uv run python scripts/bump_version.py minor"
+
+[tasks.version-patch]
+description = "Bump the semantic version to the next patch release"
+run = "uv run python scripts/bump_version.py patch"
 
 [tasks.test]
 description = "Run the test suites"

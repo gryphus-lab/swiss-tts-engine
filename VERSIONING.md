@@ -15,6 +15,7 @@ drift.
 | `pyproject.toml` | `project.version` | monorepo |
 | `apps/swiss-tts-engine/pyproject.toml` | `project.version` | engine package — read back by the FastAPI app so the running API self-identifies (OpenAPI/`/docs` + `/health`) |
 | `apps/swiss-tts-app/package.json` | `version` | Expo app (npm) |
+| `apps/swiss-tts-app/package-lock.json` | root `version` fields | Expo app lockfile (npm) |
 | `apps/swiss-tts-app/app.json` | `expo.version` | Expo app; also `expo.android.versionCode` and `expo.ios.buildNumber` |
 
 `versionCode` / `buildNumber` are derived from the semver as
@@ -34,6 +35,19 @@ in the PR:
 | Breaking — removed/renamed API route, response-shape break, incompatible model change | **MAJOR** | `feat!:` / `BREAKING CHANGE:` |
 | New backward-compatible capability | **MINOR** | REST API, web UI, Expo app, EAS/APK build config |
 | Bug fix, build/CI/config, refactor, chore, docs, generated tests | **PATCH** | `fix:`, lint/format, CI, README |
+
+Use the corresponding mise task to update all version surfaces together:
+
+```bash
+mise run version-major
+mise run version-minor
+mise run version-patch
+```
+
+`mise run setup` installs the repository's pre-push hook. The hook checks that
+the branch version is greater than the version on the remote `main`; fetch
+`main` before pushing if its remote-tracking ref is missing or stale. To enable
+the hook in an existing checkout, rerun `mise run setup`.
 
 ### Dependabot updates
 

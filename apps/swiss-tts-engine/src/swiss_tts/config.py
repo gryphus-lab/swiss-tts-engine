@@ -45,8 +45,8 @@ def _normalize_texts(raw):
     """
     Normalize each value in a dictionary.
 
-    Returns a new dictionary with each value normalized via _normalize_text_value,
-    or None if the input is not a dictionary.
+    Returns a new dictionary with each supported-dialect value normalized via
+    _normalize_text_value, or None if the input is not a dictionary.
 
     Parameters:
         raw: The value to normalize.
@@ -58,8 +58,11 @@ def _normalize_texts(raw):
         return None
     result = {}
     for k, v in raw.items():
-        if isinstance(v, (str, list)):
-            result[k] = _normalize_text_value(v)
+        if k not in SUPPORTED_DIALECTS:
+            continue
+        normalized = _normalize_text_value(v)
+        if normalized is not None:
+            result[k] = normalized
     return result if result else None
 
 
@@ -106,4 +109,4 @@ _json_texts = _load_texts_from_json()
 if _json_texts is not None:
     DEFAULT_TEXTS = _json_texts
 else:
-    DEFAULT_TEXTS = DEFAULT_FALLBACK_TEXTS
+    DEFAULT_TEXTS = dict(DEFAULT_FALLBACK_TEXTS)

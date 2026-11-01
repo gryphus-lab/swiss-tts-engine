@@ -177,6 +177,23 @@ def test_normalize_texts_skips_non_string_non_list_values():
     assert result == {"zurich": "Grüezi"}
 
 
+def test_normalize_texts_ignores_unknown_dialect_keys():
+    """Only the supported dialect names should be retained from JSON config."""
+    raw = {
+        "zurich": "Grüezi",
+        "bern": ["Hoi", "wie gahts?"],
+        "ticino": "Ciao",
+        "extra": "ignored",
+    }
+    result = config._normalize_texts(raw)
+    assert result == {"zurich": "Grüezi", "bern": "Hoi wie gahts?"}
+
+
+def test_default_texts_are_not_aliased_to_fallbacks():
+    """Loading fallback defaults should create a separate mapping."""
+    assert config.DEFAULT_TEXTS is not config.DEFAULT_FALLBACK_TEXTS
+
+
 def test_normalize_texts_returns_none_if_all_values_invalid():
     """A dict with only non-str/non-list values should return None."""
     raw = {"a": 1, "b": None, "c": 3.14}

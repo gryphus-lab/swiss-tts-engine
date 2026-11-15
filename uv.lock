@@ -2495,7 +2495,7 @@ wheels = [
 
 [[package]]
 name = "swiss-tts-engine"
-version = "1.7.90"
+version = "1.7.91"
 source = { editable = "apps/swiss-tts-engine" }
 dependencies = [
     { name = "espnet" },
@@ -2530,7 +2530,7 @@ requires-dist = [
 
 [[package]]
 name = "swiss-tts-monorepo"
-version = "1.7.90"
+version = "1.7.91"
 source = { virtual = "." }
 
 [package.dev-dependencies]

@@ -1,6 +1,6 @@
 {
   "name": "swiss-tts-app",
-  "version": "1.7.98",
+  "version": "1.7.99",
   "main": "index.js",
   "scripts": {
     "start": "expo start",
